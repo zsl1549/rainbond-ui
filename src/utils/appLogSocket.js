@@ -47,7 +47,7 @@ AppLogSocket.prototype = {
     return this.webSocket;
   },
   close() {
-    this.webSocket && this.webSocket.close();
+     this.webSocket && this.webSocket.close();
   },
   _onOpen(evt) {
     // 通知服务器
