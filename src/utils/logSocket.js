@@ -21,7 +21,7 @@ function LogSocket(option) {
   this.webSocket.onerror = this._onError.bind(this);
   this.timerQueue = new TimerQueue({
     onExecute: this.onMessage,
-    interval: option.interval || 10,
+    interval: option.interval || 10
   });
 }
 
@@ -31,7 +31,7 @@ LogSocket.prototype = {
     return this.webSocket;
   },
   close() {
-    this.webSocket.close();
+    this.webSocket && this.webSocket.close();
   },
   _onOpen(evt) {
     this.webSocket.send(`event_id=${this.eventId}`);
@@ -44,7 +44,7 @@ LogSocket.prototype = {
 
       // 判断是否最后一步
       if (data.step === "callback" || data.step === "last") {
-        this.webSocket.close();
+        this.webSocket && this.webSocket.close();
         if (data.status === "success") {
           this.onSuccess(data);
         } else if (data.status === "timeout") {
@@ -75,7 +75,7 @@ LogSocket.prototype = {
     this.onFail = null;
     this.destroyed = true;
     this.close();
-  },
+  }
 };
 
 export default LogSocket;
