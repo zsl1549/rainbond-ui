@@ -1,11 +1,10 @@
-import React, { PureComponent, Fragment } from "react";
-import { connect } from "dva";
-import { Button, Table, Modal, notification, Card } from "antd";
-import { unOpenRegion } from "../../services/team";
-import globalUtil from "../../utils/global";
-import userUtil from "../../utils/user";
+import { Alert, Button, Card, Modal, notification, Table } from 'antd';
+import { connect } from 'dva';
+import React, { PureComponent } from 'react';
+import { unOpenRegion } from '../../services/team';
+import globalUtil from '../../utils/global';
 
-//开通数据中心
+// 开通集群
 @connect(({ user, global }) => ({
   currUser: user.currentUser,
   enterprise: global.enterprise
@@ -20,47 +19,45 @@ class OpenRegion extends PureComponent {
   }
   componentDidMount() {
     this.getUnRelationedApp();
+  }
 
-    const { currUser } = this.props;
-    const team = userUtil.getDefaultTeam(currUser);
-    // 当前团队里没有数据中心
-    const currRegion = team.region[0] ? team.region[0].team_region_name : "";
-
-    if (currRegion) {
-      this.props.dispatch({
-        type: "global/getEnterpriseInfo",
-        payload: {
-          team_name: globalUtil.getCurrTeamName()
+  getUnRelationedApp = () => {
+    let { teamName } = this.props;
+    if (!teamName) {
+      teamName = globalUtil.getCurrTeamName();
+    }
+    if (teamName) {
+      unOpenRegion({
+        team_name: teamName
+      }).then(data => {
+        if (data) {
+          this.setState({ regions: data.list || [] });
         }
       });
     }
-  }
+  };
+
   handleSubmit = () => {
     if (!this.state.selectedRowKeys.length) {
       notification.warning({
-        message: "请选择要开通的数据中心"
+        message: '请选择要开通的集群'
       });
       return;
     }
+    const { onSubmit } = this.props;
+    if (onSubmit) {
+      onSubmit(this.state.selectedRowKeys);
+    }
+  };
 
-    this.props.onSubmit && this.props.onSubmit(this.state.selectedRowKeys);
-  };
-  getUnRelationedApp = () => {
-    unOpenRegion({
-      team_name: globalUtil.getCurrTeamName()
-    }).then(data => {
-      if (data) {
-        this.setState({ regions: data.list || [] });
-      }
-    });
-  };
   handleCancel = () => {
-    this.props.onCancel && this.props.onCancel();
+    const { onCancel } = this.props;
+    if (onCancel) {
+      onCancel();
+    }
   };
   render() {
-    const mode = this.props.mode || "modal";
-    console.log("mode", mode);
-    const { enterprise } = this.props;
+    const mode = this.props.mode || 'modal';
     const rowSelection = {
       onChange: (selectedRowKeys, selectedRows) => {
         this.setState({
@@ -71,24 +68,22 @@ class OpenRegion extends PureComponent {
       }
     };
 
-    if (mode === "modal") {
+    if (mode === 'modal') {
       return (
         <Modal
-          title="开通数据中心"
+          title="开通集群"
           width={600}
-          visible={true}
+          visible
           onOk={this.handleSubmit}
           onCancel={this.handleCancel}
         >
-          {this.state.regions.length == 0 &&
-            enterprise &&
-            !enterprise.is_enterprise && (
-              <div style={{ width: "100%", textAlign: "center" }}>
-                <a href="https://www.goodrain.com/info.html" target="_blank">
-                  多云管理功能请咨询企业服务
-                </a>
-              </div>
-            )}
+          {this.state.regions.length === 0 && (
+            <Alert
+              type="warning"
+              style={{ marginBottom: '16px' }}
+              message="暂无其他集群，请到集群管理面板中添加更多集群"
+            />
+          )}
           <Table
             size="small"
             pagination={false}
@@ -96,12 +91,12 @@ class OpenRegion extends PureComponent {
             rowSelection={rowSelection}
             columns={[
               {
-                title: "数据中心",
-                dataIndex: "region_alias"
+                title: '名称',
+                dataIndex: 'region_alias'
               },
               {
-                title: "简介",
-                dataIndex: "desc"
+                title: '简介',
+                dataIndex: 'desc'
               }
             ]}
           />
@@ -110,7 +105,7 @@ class OpenRegion extends PureComponent {
     }
 
     return (
-      <Card title="当前团队没有数据中心，请先开通" style={{ height: "500px" }}>
+      <Card title="当前团队没有集群，请先开通" style={{ height: '500px' }}>
         <Table
           size="small"
           pagination={false}
@@ -118,16 +113,16 @@ class OpenRegion extends PureComponent {
           rowSelection={rowSelection}
           columns={[
             {
-              title: "数据中心",
-              dataIndex: "region_alias"
+              title: '集群',
+              dataIndex: 'region_alias'
             },
             {
-              title: "简介",
-              dataIndex: "desc"
+              title: '简介',
+              dataIndex: 'desc'
             }
           ]}
         />
-        <div style={{ textAlign: "right", paddingTop: 16 }}>
+        <div style={{ textAlign: 'right', paddingTop: 16 }}>
           <Button type="primary" onClick={this.handleSubmit}>
             开通
           </Button>

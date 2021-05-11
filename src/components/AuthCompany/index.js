@@ -1,259 +1,495 @@
-import React, { PureComponent } from "react";
-import { connect } from "dva";
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-multi-assign */
+/* eslint-disable no-undef */
+/* eslint-disable jsx-a11y/iframe-has-title */
+/* eslint-disable react/no-multi-comp */
+/* eslint-disable no-nested-ternary */
+/* eslint-disable no-unused-expressions */
 import {
-  Row,
-  Col,
+  Alert,
   Button,
-  Modal,
+  Card,
+  Checkbox,
+  Col,
   Form,
   Input,
-  Steps,
+  Modal,
   notification,
-  Icon
-} from "antd";
-import globalUtil from "../../utils/global";
-
-const { Step } = Steps;
-const { TextArea } = Input;
-@Form.create()
-class AuthForm extends PureComponent {
-  handleSubmit = e => {
-    this.props.certificationState == "success"
-      ? this.props.onSubmit()
-      : this.props.handleTakeInfo();
-  };
-  render() {
-    const formItemLayout = {
-      labelCol: {
-        span: 6
-      },
-      wrapperCol: {
-        span: 18
-      }
-    };
-    const { getFieldDecorator } = this.props.form;
-    const { certificationState } = this.props;
-    return (
-      <Form
-        style={{
-          textAlign: "center"
-        }}
-        layout="horizontal"
-        hideRequiredMark
-      >
-        <div>
-          <Icon
-            type={
-              certificationState == "loading"
-                ? "sync"
-                : certificationState == "success"
-                ? "check-circle"
-                : "close-circle"
-            }
-            spin={certificationState == "loading" ? true : false}
-            theme={certificationState != "loading" ? "twoTone" : ""}
-            style={{
-              fontSize: "50px",
-              color: certificationState == "loading" ? "#52c41a" : ""
-            }}
-            twoToneColor={certificationState == "error" ? "#cf1010" : "#52c41a"}
-          />
-        </div>
-
-        <p
-          style={{
-            fontSize: "24px",
-            color: "rgba(0, 0, 0, 0.85)",
-            fontWeight: 500,
-            lineHeight: "32px",
-            margin: "16px 0"
-          }}
-        >
-          {certificationState == "loading"
-            ? "认证检测中请稍后......"
-            : certificationState == "success"
-            ? "认证成功"
-            : "认证失败"}
-        </p>
-
-        {certificationState != "loading" && (
-          <Button
-            onClick={this.handleSubmit}
-            type={certificationState == "success" ? "primary" : "default"}
-          >
-            {certificationState == "success" ? "确认" : "重新获取认证信息"}
-          </Button>
-        )}
-      </Form>
-    );
-  }
-}
+  Row
+} from 'antd';
+import axios from 'axios';
+import { connect } from 'dva';
+import React, { Fragment, PureComponent } from 'react';
+import PluginStyles from '../../pages/Create/Index.less';
+import cookie from '../../utils/cookie';
+import Ellipsis from '../Ellipsis';
 
 @connect(({ user, global }) => ({
   currUser: user.currentUser,
   rainbondInfo: global.rainbondInfo
 }))
+@Form.create()
 export default class Index extends PureComponent {
-  constructor(arg) {
-    super(arg);
+  constructor(post) {
+    super(post);
     this.state = {
-      currStep: 0,
-      certificationState: "loading",
-      eid: "",
-      market_info: this.props.market_info
+      currStep: this.props.currStep || 0,
+      loading: false,
+      alertText: false,
+      marketUrl: '',
+      accessKey: '',
+      marketList: [],
+      checkedValues: []
     };
   }
-
   componentWillMount() {
-    this.handleEnterpriseID();
-  }
+    // eslint-disable-next-line func-names
+    window.addEventListener('message', res => {
+      if (res.data && res.data.accessKey) {
+        return this.handleNextStep(3, res.data.accessKey);
+      }
+    });
 
-  handleAuthEnterprise = market_info => {
-    const { eid } = this.state;
-    this.props.dispatch({
-      type: "global/authEnterprise",
-      payload: {
-        team_name: globalUtil.getCurrTeamName(),
-        enterprise_id: eid,
-        market_info
-      },
+    const { currStep } = this.props;
+    if (currStep === 2) {
+      this.setState({ loading: true }, () => {
+        this.getAppMarketInfo();
+      });
+    }
+  }
+  onChangeCheckbox = checkedValues => {
+    this.setState({
+      checkedValues
+    });
+  };
+  getAppMarketInfo = () => {
+    const { dispatch, eid, marketName } = this.props;
+    const payload = Object.assign(
+      {},
+      {
+        name: marketName,
+        enterprise_id: eid
+      }
+    );
+    dispatch({
+      type: 'market/fetchAppMarketInfo',
+      payload,
       callback: res => {
-        if (res && res._code == 200) {
-          this.setState({
-            certificationState: "success"
-          });
-        }
-      },
-      handleError: res => {
-        if (res && res.status === 500) {
-          this.setState({
-            certificationState: "error"
-          });
+        if (res && res.status_code === 200) {
+          if (res.list && res.list.url) {
+            this.setState({
+              marketUrl: res.list.url
+            });
+            this.handleCurrStep(2);
+          } else {
+            this.handleCurrStep(1);
+          }
+          this.handleClose();
         }
       }
     });
   };
-
-  handleClose = () => {
-    this.hidden();
-    this.props.onOk && this.props.onOk();
-  };
-  hidden = () => {
-    this.props.dispatch({ type: "global/hideAuthCompany" });
-  };
-
-  //获取当前团队的企业ID
-  handleEnterpriseID = () => {
-    this.props.dispatch({
-      type: "global/getEnterpriseID",
-      payload: {
-        team_name: globalUtil.getCurrTeamName()
-      },
+  handleBindingMarketsList = accessKey => {
+    const { dispatch, eid, marketName } = this.props;
+    const { marketUrl } = this.state;
+    const payload = Object.assign(
+      {},
+      {
+        market_name: marketName,
+        market_url: marketUrl,
+        access_key: accessKey,
+        enterprise_id: eid
+      }
+    );
+    dispatch({
+      type: 'market/fetchBindingMarketsList',
+      payload,
       callback: res => {
-        if (res && res._code == 200) {
-          this.setState(
+        if (res && res.status_code === 200) {
+          this.setState({
+            marketList: res.list,
+            accessKey
+          });
+          this.handleCurrStep(4);
+          this.handleClose();
+        }
+      },
+      handleError: () => {
+        this.handleClose();
+      }
+    });
+  };
+  handleNextStep = (stpe, parameter) => {
+    this.setState({ loading: true }, () => {
+      if (stpe === 1) {
+        this.getAppMarketInfo();
+      } else if (stpe === 2) {
+        this.handleMarketUrl();
+      } else if (stpe === 3) {
+        this.handleBindingMarketsList(parameter);
+      }
+    });
+  };
+
+  handleCurrStep = step => {
+    this.setState({
+      currStep: step
+    });
+  };
+  handleMarketUrl = () => {
+    const { form } = this.props;
+    form.validateFields((err, values) => {
+      if (!err) {
+        this.handleIsCloudAppStoreUrl(values.url);
+      }
+    });
+  };
+  handleIsCloudAppStoreUrl = url => {
+    const { dispatch } = this.props;
+    axios
+      .get(`${url}/app-server/openapi/healthz`)
+      .then(res => {
+        if (res && res.data && res.data.isRainstore) {
+          this.setState({
+            marketUrl: url,
+            currStep: 2,
+            loading: false,
+            alertText: false
+          });
+        } else {
+          this.handleNoCloudAppStoreUrl();
+        }
+      })
+      .catch(() => {
+        this.handleNoCloudAppStoreUrl();
+      });
+  };
+  handleNoCloudAppStoreUrl = () => {
+    this.setState({
+      alertText: '应用市场不可用，请检查应用市场地址，或联系应用市场的管理员',
+      loading: false
+    });
+  };
+  handleOkMarkets = () => {
+    const { form, marketName } = this.props;
+    const { marketList, checkedValues, accessKey, marketUrl } = this.state;
+    form.validateFields(err => {
+      if (!err) {
+        this.setState({ loading: true }, () => {
+          const arr = [];
+          checkedValues.map(items => {
+            marketList.map(item => {
+              if (item.domain === items && marketName) {
+                item.name = marketName;
+              } else {
+                item.name = `a${this.uuid(16, 16)}`;
+              }
+              item.access_key = accessKey;
+              item.type = 'rainstore';
+              if (item.domain === items) {
+                arr.push(item);
+              }
+            });
+          });
+          const { dispatch, eid, onCancel } = this.props;
+          const payload = Object.assign(
+            {},
             {
-              eid: res.bean.eid
-            },
-            () => {
-              this.handleMarket();
+              markets: arr,
+              enterprise_id: eid
             }
           );
-        }
+          dispatch({
+            type: 'market/addBindingMarkets',
+            payload,
+            callback: res => {
+              if (res && res.status_code === 200) {
+                if (onCancel) {
+                  onCancel();
+                } else {
+                  this.hidden();
+                }
+                notification.success({
+                  message: '绑定成功',
+                  duration: 1
+                });
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              }
+              this.handleClose();
+            },
+            handleError: () => {
+              this.handleClose();
+            }
+          });
+        });
       }
     });
   };
+  uuid = (len, radix) => {
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split(
+      ''
+    );
+    const uuid = [];
+    const radixs = radix || chars.length;
 
-  //检测是否有market值
-  handleMarket = () => {
-    let market = this.state.market_info;
-    if (market) {
-      this.setState(
-        {
-          currStep: 1
-        },
-        () => {
-          this.handleAuthEnterprise(market);
+    if (len) {
+      // Compact form
+      // eslint-disable-next-line no-bitwise
+      for (let i = 0; i < len; i++)
+        uuid[i] = chars[0 | (Math.random() * radixs)];
+    } else {
+      // rfc4122, version 4 form
+      let r = '';
+
+      // rfc4122 requires these characters
+      uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+      uuid[14] = '4';
+
+      // Fill in random data.  At i==19 set the high bits of clock sequence as
+      // per rfc4122, sec. 4.1.5
+      for (let i = 0; i < 36; i++) {
+        if (!uuid[i]) {
+          // eslint-disable-next-line no-bitwise
+          r = 0 | (Math.random() * 16);
+          // eslint-disable-next-line no-bitwise
+          uuid[i] = chars[i == 19 ? (r & 0x3) | 0x8 : r];
         }
-      );
+      }
     }
-  };
 
-  handleTakeInfo = () => {
-    const { eid } = this.state;
-    const { rainbondInfo } = this.props;
-    const domain =
-      rainbondInfo &&
-      rainbondInfo.market_url !== undefined &&
-      rainbondInfo.market_url
-        ? rainbondInfo.market_url
-        : "https://market.goodrain.com";
-    const callback = window.location.href;
-    const version =
-      rainbondInfo && rainbondInfo.version !== undefined
-        ? rainbondInfo.version
-        : "";
-    const url =
-      domain +
-      "/manage/jointcloud?join_id=" +
-      eid +
-      "&callback_url=" +
-      callback +
-      "&rbd_version=" +
-      version;
-    window.location.href = url;
+    return uuid.join('');
   };
-
+  handleClose = () => {
+    this.setState({
+      loading: false
+    });
+  };
+  hidden = () => {
+    cookie.setGuide('appStore', 'true');
+    this.props.dispatch({ type: 'global/hideAuthCompany' });
+  };
   render() {
-    const step = this.state.currStep;
+    const {
+      currStep: step,
+      loading,
+      marketList,
+      marketUrl,
+      alertText
+    } = this.state;
+    const {
+      title = '企业尚未绑定云端应用商店, 按以下步骤进行绑定认证',
+      onCancel,
+      rainbondInfo
+    } = this.props;
+    const { getFieldDecorator } = this.props.form;
+    const formItemLayout = {
+      labelCol: {
+        span: 0
+      },
+      wrapperCol: {
+        span: 24
+      }
+    };
+    const defaultMarketUrl = rainbondInfo && rainbondInfo.default_market_url;
+    const message = (
+      <span>
+        正在访问
+        <a target="_blank" rel="noopener noreferrer" href={marketUrl}>
+          云应用商店
+        </a>
+        进行用户授权，完成后可获取安装应用的权限。
+      </span>
+    );
     return (
       <Modal
-        width={800}
-        title="企业尚未认证, 按以下步骤进行认证"
+        width={530}
+        title={title}
         visible
-        onCancel={this.hidden}
+        onCancel={onCancel || this.hidden}
         footer={null}
       >
         <div>
-          <Steps
-            style={{
-              margin: "0 auto",
-              width: "calc(100% - 80px)"
-            }}
-            progressDot
-            current={step}
-          >
-            <Step title="获取认证信息" />
-            <Step title="认证检测" />
-          </Steps>
-          <div
-            style={{
-              textAlign: "center",
-              padding: "80px 0",
-              display: step === 0 ? "block" : "none"
-            }}
-          >
-            <p>获取您企业的认证信息后返回本页进行第二步</p>
-            <Button onClick={this.handleTakeInfo} type="primary">
-              去获取
-            </Button>
-          </div>
-
-          <div
-            style={{
-              textAlign: "center",
-              padding: "80px 0",
-              width: "350px",
-              margin: "0 auto",
-              display: step === 1 ? "block" : "none"
-            }}
-          >
-            <AuthForm
-              onSubmit={this.handleClose}
-              certificationState={this.state.certificationState}
-              handleTakeInfo={this.handleTakeInfo}
-            />
-          </div>
+          {step === 2 && !loading && (
+            <div>
+              <Alert
+                message={message}
+                type="success"
+                style={{ marginBottom: '24px' }}
+              />
+              <iframe
+                src={`${marketUrl}/certification/login`}
+                style={{
+                  width: '100%',
+                  height: '400px'
+                }}
+                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                scrolling="auto"
+                frameBorder="no"
+                border="0"
+                marginWidth="0"
+                marginHeight="0"
+              />
+            </div>
+          )}
+          {step !== 2 && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center'
+              }}
+            >
+              <div
+                style={{
+                  textAlign: 'center'
+                }}
+              >
+                {step === 0 && (
+                  <div>
+                    <p style={{ fontSize: '18px', marginBottom: '40px' }}>
+                      请先进行应用市场认证
+                    </p>
+                    <Button
+                      onClick={() => {
+                        this.handleNextStep(1);
+                      }}
+                      loading={loading}
+                      type="primary"
+                    >
+                      去认证
+                    </Button>
+                  </div>
+                )}
+                {step === 1 && (
+                  <div>
+                    <p style={{ fontSize: '18px', marginBottom: '40px' }}>
+                      请填写需要进行绑定的应用市场的URL
+                    </p>
+                    {alertText && (
+                      <Alert
+                        style={{ margin: '-20px 0 20px 0' }}
+                        message={alertText}
+                        type="info"
+                      />
+                    )}
+                    <Form>
+                      <Form.Item {...formItemLayout} label="">
+                        {getFieldDecorator('url', {
+                          initialValue: defaultMarketUrl || '',
+                          rules: [
+                            {
+                              required: true,
+                              message: '请填写需要进行绑定的应用市场的URL'
+                            }
+                          ]
+                        })(
+                          <Input
+                            type="text"
+                            placeholder="请填写需要进行绑定的应用市场的URL"
+                          />
+                        )}
+                      </Form.Item>
+                      <Button
+                        onClick={() => {
+                          this.handleNextStep(2);
+                        }}
+                        loading={loading}
+                        type="primary"
+                      >
+                        下一步
+                      </Button>
+                    </Form>
+                  </div>
+                )}
+                {step === 4 && (
+                  <div>
+                    <p style={{ fontSize: '18px', marginBottom: '30px' }}>
+                      认证成功，选择需要绑定的商店
+                    </p>
+                    <Form className={PluginStyles.customGroup}>
+                      <Form.Item {...formItemLayout} label="">
+                        {getFieldDecorator('markets', {
+                          initialValue: [],
+                          rules: [
+                            {
+                              required: true,
+                              message: '请选择需要绑定的商店'
+                            }
+                          ]
+                        })(
+                          <Checkbox.Group
+                            onChange={this.onChangeCheckbox}
+                            style={{ width: '450px' }}
+                          >
+                            <Row gutter={[24, 24]}>
+                              {marketList.map(item => {
+                                const { name, url, logo, desc, domain } = item;
+                                return (
+                                  <Col
+                                    span={24}
+                                    key={url}
+                                    style={{ position: 'relative', padding: 0 }}
+                                  >
+                                    <Checkbox
+                                      value={domain}
+                                      style={{ width: '400px' }}
+                                    >
+                                      <Card className={PluginStyles.cards}>
+                                        <Card.Meta
+                                          className={PluginStyles.cardsMetas}
+                                          avatar={
+                                            <img
+                                              style={{
+                                                width: 110,
+                                                height: 110,
+                                                margin: ' 0 auto'
+                                              }}
+                                              alt={name}
+                                              src={
+                                                logo ||
+                                                require('../../../public/images/market.svg')
+                                              }
+                                              height={110}
+                                            />
+                                          }
+                                          title={name}
+                                          description={
+                                            <Fragment>
+                                              <Ellipsis
+                                                className={PluginStyles.item}
+                                                lines={3}
+                                              >
+                                                <span title={desc}>{desc}</span>
+                                              </Ellipsis>
+                                            </Fragment>
+                                          }
+                                        />
+                                      </Card>
+                                    </Checkbox>
+                                  </Col>
+                                );
+                              })}
+                            </Row>
+                          </Checkbox.Group>
+                        )}
+                      </Form.Item>
+                    </Form>
+                    <Button
+                      onClick={() => {
+                        this.handleOkMarkets();
+                      }}
+                      loading={loading}
+                      type="primary"
+                    >
+                      绑定
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     );

@@ -1,93 +1,135 @@
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable react/jsx-no-bind */
+import { Col, Icon, Input, Row } from 'antd';
 import React, { Component } from 'react';
-import { Form, Checkbox, Row, Col, Select, Input, Button, Icon } from 'antd';
 
-let uuid = 0;
+const { TextArea } = Input;
+
 class Parameterinput extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            values: this.props.editInfo&&this.props.editInfo.length>0?this.props.editInfo : [{ key: '', value: '' }]
-        }
-        // this.initFromProps();
+  constructor(props) {
+    super(props);
+    this.state = {
+      values: [{ item_key: '', item_value: '' }]
+    };
+  }
+  componentDidMount() {
+    const { editInfo } = this.props;
+    if (editInfo && editInfo.length > 0 && editInfo[0].item_key) {
+      // eslint-disable-next-line react/no-did-mount-set-state
+      this.setState({
+        values: editInfo
+      });
     }
-    add = () => {
-        var values = this.state.values;
-        this.setState({ values: values.concat({ key: '', value: '' }) })
-    }
-    // componentWillReceiveProps(nextProps) {
-    //     if ('value' in nextProps) {
-    //         const value = nextProps.value;
-    //         this.initFromProps(value);
-    //     }
-    // }
+  }
 
-    initFromProps(values) {
-        this.setState({ values })
-        // var value = value || this.props.value;
-        // if (value) {
-        //     var res = [];
-        //     var valArr = value.split(';');
-        //     for (var i = 0; i < valArr.length; i++) {
-        //         res.push({ key: valArr[i].split('=')[0], value: valArr[i].split('=')[1] });
-        //     }
-        //     this.setValues(res);
-        // }
+  onKeyChange = (index, e) => {
+    const { values } = this.state;
+    values[index].item_key = e.target.value;
+    this.triggerChange(values);
+    this.setValues(values);
+  };
+  onValueChange = (index, e) => {
+    const { values } = this.state;
+    values[index].item_value = e.target.value;
+    this.triggerChange(values);
+    this.setValues(values);
+  };
+  setValues(arr = []) {
+    if (!(arr && arr.length)) {
+      arr.push({ item_key: '', item_value: '' });
     }
-    setValues(arr) {
-        arr = arr || [];
-        if (!arr.length) { arr.push({ key: '', value: '' }) };
-        this.setState({ values: arr });
+    this.setState({ values: arr });
+  }
+  add = () => {
+    const { values } = this.state;
+    this.setState({ values: values.concat({ item_key: '', item_value: '' }) });
+  };
+  remove = index => {
+    const { values } = this.state;
+    values.splice(index, 1);
+    this.setValues(values);
+    this.triggerChange(values);
+  };
+  triggerChange(values) {
+    const { onChange } = this.props;
+    if (onChange) {
+      onChange(values);
     }
-    remove = (index) => {
-        var values = this.state.values;
-        values.splice(index, 1);
-        this.setValues(values);
-        this.triggerChange(values);
-    }
+  }
 
-    triggerChange(values) {
-        // var res = [];
-        // for (var i = 0; i < values.length; i++) {
-        //     res.push(values[i].key + '=' + values[i].value);
-        // }
-        var onChange = this.props.onChange;
-        onChange && onChange(values);
-    }
-    onKeyChange = (index, e) => {
-        var values = this.state.values;
-        values[index].key = e.target.value;
-
-        this.triggerChange(values);
-        this.setValues(values);
-
-    }
-    onValueChange = (index, e) => {
-        var values = this.state.values;
-        values[index].value = e.target.value;
-        this.triggerChange(values);
-        this.setValues(values);
-    }
-    render() {
-        const keyPlaceholder = this.props.keyPlaceholder || '请输入key值';
-        const valuePlaceholder = this.props.valuePlaceholder || '请输入value值';
-        const values = this.state.values;
-        return (
-            <div>
-                {
-                    values&&values.length>0&&values.map((item, index) => {
-                        uuid++;
-                        return (<Row key={index}>
-                            <Col span={9}><Input name="key" onChange={this.onKeyChange.bind(this, index)} value={item.key} placeholder={keyPlaceholder} /></Col>
-                            <Col span={2} style={{ textAlign: 'center' }}>:</Col>
-                            <Col span={9}><Input name="value" onChange={this.onValueChange.bind(this, index)} value={item.value} placeholder={valuePlaceholder} /></Col>
-                            <Col span={4} style={{ textAlign: 'center' }}>
-                                {index == 0 ? <Icon type="plus-circle" onClick={this.add} style={{ fontSize: "20px" }} /> : <Icon type="minus-circle" style={{ fontSize: "20px" }} onClick={this.remove.bind(this, index)} />}
-                            </Col>
-                        </Row>)
-                    })
-                }
-            </div>
-        )
-    }
+  render() {
+    const {
+      keyPlaceholder = '请输入key值',
+      valuePlaceholder = '请输入value值'
+    } = this.props;
+    const { values } = this.state;
+    return (
+      <div>
+        {values &&
+          values.length > 0 &&
+          values.map((item, index) => {
+            const isPassword =
+              item.item_key.indexOf('PASS') > -1 ||
+              item.item_key.indexOf('pass') > -1;
+            return (
+              <Row
+                style={{ display: 'flex', alignItems: 'center' }}
+                key={`conifgitem${index}`}
+              >
+                <Col span={10}>
+                  <Input
+                    autoComplete="off"
+                    name="item_key"
+                    value={item.item_key}
+                    maxLength={255}
+                    placeholder={keyPlaceholder}
+                    onChange={this.onKeyChange.bind(this, index)}
+                  />
+                </Col>
+                <Col span={1} style={{ textAlign: 'center' }}>
+                  :
+                </Col>
+                <Col span={10}>
+                  {isPassword ? (
+                    <Input.Password
+                      autoComplete="new-password"
+                      name="item_value"
+                      value={item.item_value}
+                      maxLength={65533}
+                      placeholder={valuePlaceholder}
+                      onChange={this.onValueChange.bind(this, index)}
+                    />
+                  ) : (
+                    <TextArea
+                      name="item_value"
+                      rows={1}
+                      value={item.item_value}
+                      maxLength={65533}
+                      placeholder={valuePlaceholder}
+                      onChange={this.onValueChange.bind(this, index)}
+                    />
+                  )}
+                </Col>
+                <Col span={3} style={{ textAlign: 'center' }}>
+                  {index === 0 ? (
+                    <Icon
+                      type="plus-circle"
+                      onClick={this.add}
+                      style={{ fontSize: '20px' }}
+                    />
+                  ) : (
+                    <Icon
+                      type="minus-circle"
+                      style={{ fontSize: '20px' }}
+                      onClick={this.remove.bind(this, index)}
+                    />
+                  )}
+                </Col>
+              </Row>
+            );
+          })}
+      </div>
+    );
+  }
 }
 export default Parameterinput;

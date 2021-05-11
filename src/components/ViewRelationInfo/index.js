@@ -1,21 +1,18 @@
 //查看连接信息
-import React, { PureComponent, Fragment } from "react";
-import { connect } from "dva";
-import { Link, Switch, Route } from "dva/router";
 import {
-  Row,
-  Col,
-  Card,
-  Form,
-  Button,
-  Icon,
-  Menu,
-  Input,
-  Dropdown,
-  Table,
-  Modal,
-  Tooltip
+    Button,
+
+
+    Input,
+
+
+    Modal, Table,
+
+    Tooltip
 } from "antd";
+import { connect } from "dva";
+import React, { PureComponent } from "react";
+import styles from '../../pages/Component/Index.less';
 import globalUtil from "../../utils/global";
 
 @connect(({ user, appControl }) => ({
@@ -28,7 +25,8 @@ export default class ViewRelationInfo extends PureComponent {
       list: [],
       page: 1,
       page_size: 8,
-      total: 0
+      total: 0,
+      isAttrNameList: [],
     };
   }
   componentDidMount() {
@@ -39,6 +37,9 @@ export default class ViewRelationInfo extends PureComponent {
     this.props.dispatch({
       type: "appControl/clearRelationOuterEnvs"
     });
+  }
+  shouldComponentUpdate(){
+    return true;
   }
 
   onPageChange = page => {
@@ -63,8 +64,20 @@ export default class ViewRelationInfo extends PureComponent {
         page_size
       },
       callback: res => {
-        if (res && res._code == 200) {
-          this.setState({ total: res.bean.total });
+        if (res && res.status_code === 200) {
+          const arr = [];
+          if (res.list && res.list.length > 0) {
+            res.list.map(item => {
+              const isHidden = globalUtil.confirmEnding(
+                `${item.attr_name}`,
+                'PASS'
+              );
+              if (isHidden) {
+                arr.push(item.ID);
+              }
+            });
+          }
+          this.setState({ isAttrNameList: arr, total: res.bean.total });
         }
       }
     });
@@ -87,11 +100,40 @@ export default class ViewRelationInfo extends PureComponent {
   };
 
   rowKey = (record, index) => (record ? record.attr_name : index);
+  AfterPassword = (isHidden, ID) => {
+    const passwordShow = globalUtil.fetchSvg('passwordShow');
+    const passwordHidden = globalUtil.fetchSvg('passwordHidden');
+    return (
+      <span
+        onClick={() => {
+          this.handlePassword(isHidden, ID);
+        }}
+      >
+        {isHidden ? passwordHidden : passwordShow}
+      </span>
+    );
+  };
+  handlePassword = (isHidden, ID) => {
+    const { isAttrNameList } = this.state;
+    const arr = isAttrNameList;
+    if (isHidden) {
+      const index = arr.indexOf(ID);
+      arr.splice(index, 1);
+    } else {
+      arr.push(ID);
+    }
+    this.setState({
+      isAttrNameList: arr,
+    });
+  };
 
   render() {
     const { relationOuterEnvs } = this.props;
-    const { page, page_size, total } = this.state;
-
+    const { page, page_size, total, isAttrNameList } = this.state;
+    const wraps = {
+      wordBreak: 'break-all',
+      wordWrap: 'break-word',
+    };
     return (
       <Modal
         title="依赖信息查看"
@@ -117,7 +159,32 @@ export default class ViewRelationInfo extends PureComponent {
             {
               title: "变量值",
               dataIndex: "attr_value",
-              render: v => this.handleOver(v)
+              render: (v, item) => {
+                const isHidden = isAttrNameList.includes(item.ID);
+                const isInput = globalUtil.confirmEnding(
+                  `${item.attr_name}`,
+                  'PASS'
+                );
+                return (
+                  <div style={wraps} key={v}>
+                    <Tooltip title={!isInput ? v : !isHidden && v}>
+                      {isInput ? (
+                        <Input
+                          addonAfter={this.AfterPassword(
+                            isHidden,
+                            item.ID
+                          )}
+                          type={isHidden ? 'password' : 'text'}
+                          className={styles.hiddeninput}
+                          value={v}
+                        />
+                      ) : (
+                        this.handleOver(v)
+                      )}
+                    </Tooltip>
+                  </div>
+                );
+              },
             },
             {
               title: "说明",

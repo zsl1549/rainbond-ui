@@ -1,121 +1,118 @@
+import { Button, Form, Input, Modal, Select } from 'antd';
+import { connect } from 'dva';
 import React, { PureComponent } from 'react';
-import { Button, Icon, Modal, Form, Checkbox, Select, Input } from 'antd';
 import { getAllRegion } from '../../services/api';
-import globalUtil from '../../utils/global';
-
+import styles from './index.less';
 
 const FormItem = Form.Item;
-const Option = Select.Option;
-
+const { Option } = Select;
+@connect(({ loading }) => ({
+  Loading: loading.effects['teamControl/createTeam']
+}))
 @Form.create()
-class CreateTeam extends PureComponent{
-   constructor(arg){
-     super(arg);
-     this.state = {
-        actions: [],
-        regions:[]
-     }
-   }
-   componentDidMount(){
-     this.getUnRelationedApp();
-   }
-   getUnRelationedApp = () => {
-       getAllRegion().then((data) => {
-          if(data){
-              this.setState({regions: data.list || []})
-          }
-      })
-   }
-   handleSubmit= () => {
-       this.props.form.validateFields((err, values) => {
-        if (!err) {
-          this.props.onOk && this.props.onOk(values);
-        }
-      });
-   }
-   render(){
-      const { getFieldDecorator } = this.props.form;
-      const { onOk, onCancel, actions}= this.props;
+class CreateTeam extends PureComponent {
+  constructor(arg) {
+    super(arg);
+    this.state = {
+      regions: []
+    };
+  }
+  componentDidMount() {
+    const { enterprise_id: ID } = this.props;
+    if (ID) {
+      this.getUnRelationedApp(ID);
+    }
+  }
+  getUnRelationedApp = ID => {
+    getAllRegion({ enterprise_id: ID, status: '1' }).then(data => {
+      if (data) {
+        this.setState({ regions: data.list || [] });
+      }
+    });
+  };
+  handleSubmit = () => {
+    const { onOk, form } = this.props;
+    form.validateFields((err, values) => {
+      if (!err && onOk) {
+        onOk(values);
+      }
+    });
+  };
+  render() {
+    const { onCancel, form, Loading, title } = this.props;
+    const { getFieldDecorator } = form;
 
-      const formItemLayout = {
-        labelCol: {
-          xs: { span: 24 },
-          sm: { span: 6 },
-        },
-        wrapperCol: {
-          xs: { span: 24 },
-          sm: { span: 14 },
-        },
-      };
-      const tailFormItemLayout = {
-        wrapperCol: {
-          xs: {
-            span: 24,
-            offset: 0,
-          },
-          sm: {
-            span: 14,
-            offset: 6,
-          },
-        },
-      };
+    const formItemLayout = {
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 6 }
+      },
+      wrapperCol: {
+        xs: { span: 24 },
+        sm: { span: 14 }
+      }
+    };
 
-      const options = actions || [];
+    return (
+      <Modal
+        title={title || '创建团队'}
+        visible
+        maskClosable={false}
+        className={styles.TelescopicModal}
+        onOk={this.handleSubmit}
+        onCancel={onCancel}
+        footer={[
+          <Button onClick={onCancel}> 取消 </Button>,
+          <Button type="primary" onClick={this.handleSubmit} loading={Loading}>
+            确定
+          </Button>
+        ]}
+      >
+        <Form onSubmit={this.handleSubmit} layout="horizontal">
+          <FormItem {...formItemLayout} label="团队名称" hasFeedback>
+            {getFieldDecorator('team_name', {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入团队名称'
+                },
+                {
+                  max: 10,
+                  message: '团队名称最多10个字'
+                }
+              ]
+            })(<Input placeholder="请输入团队名称" />)}
+            <div className={styles.conformDesc}>
+              请输入创建的团队名称，最多10个字
+            </div>
+          </FormItem>
 
-      return (
-          <Modal
-            title="新建团队"
-            visible={true}
-            onOk={this.handleSubmit}
-            onCancel={onCancel}
-          >
-
-             <Form onSubmit={this.handleSubmit}>
-              <FormItem
-                {...formItemLayout}
-                label="团队名称"
-                hasFeedback
+          <FormItem {...formItemLayout} label="集群" hasFeedback>
+            {getFieldDecorator('useable_regions', {
+              rules: [
+                {
+                  required: true,
+                  message: '请选择集群'
+                }
+              ]
+            })(
+              <Select
+                mode="multiple"
+                style={{ width: '100%' }}
+                placeholder="选择集群"
               >
-                {getFieldDecorator('team_name', {
-                    rules: [{
-                      required: true,
-                      message: '请输入团队名称',
-                    }],
-                  })(
-                    <Input placeholder="请输入团队名称" />
-                )}
-                
-              </FormItem>
-
-              <FormItem
-                {...formItemLayout}
-                label="数据中心"
-                hasFeedback
-              >
-                {getFieldDecorator('useable_regions', {
-                    rules: [{
-                      required: true,
-                      message: '请选择数据中心',
-                    }],
-                  })(
-                    <Select
-                      mode="multiple"
-                      style={{ width: '100%' }}
-                      placeholder="选择数据中心"
-                    >
-                      {(this.state.regions || []).map((item) => {
-                          return <Option key={item.region_name}>{item.region_alias}</Option>
-                      })}
-                    </Select>
-                )}
-                
-              </FormItem>
-              </Form>
-
-             
-          </Modal>
-      )
-   }
+                {(this.state.regions || []).map(item => {
+                  return (
+                    <Option key={item.region_name}>{item.region_alias}</Option>
+                  );
+                })}
+              </Select>
+            )}
+            <div className={styles.conformDesc}>请选择使用的集群</div>
+          </FormItem>
+        </Form>
+      </Modal>
+    );
+  }
 }
-
-export default CreateTeam
+export default CreateTeam;

@@ -1,40 +1,75 @@
+/* eslint-disable no-unused-expressions */
+import { routerRedux } from 'dva/router';
 import {
-  query as queryUsers,
-  queryCurrent,
-  login,
-  getDetail,
-  logout,
-  queryOauthType,
-  register,
-  gitlabRegister,
-  createGitlabProject,
+  addAccessToken,
+  addCollectionView,
   changePass,
-  queryThirdInfo,
-  queryThirdCertification,
-  queryCertificationThird,
+  createGitlabProject,
+  deleteAccessToke,
+  deleteCollectionViewInfo,
+  fetchAccessToken,
+  fetchEnterpriseNoTeamUser,
+  getDetail,
   getTeamByName,
+  gitlabRegister,
+  login,
+  putAccessToken,
+  putCollectionViewInfo,
+  query as queryUsers,
+  queryCertificationThird,
+  queryCollectionViewInfo,
+  queryOauthType,
   queryThirdBinding,
-  queryThirdLoginBinding
-} from "../services/user";
-import { setAuthority } from "../utils/authority";
-import cookie from "../utils/cookie";
-import { routerRedux } from "dva/router";
+  queryThirdCertification,
+  queryThirdInfo,
+  queryThirdLoginBinding,
+  register
+} from '../services/user';
+import { setAuthority } from '../utils/authority';
+import cookie from '../utils/cookie';
+import userUtil from '../utils/global';
 
 export default {
-  namespace: "user",
+  namespace: 'user',
 
   state: {
     list: [],
+    collectionList: [],
     currentUser: null,
     notifyCount: 0,
     register: null
   },
 
   effects: {
+    *fetchAccessToken({ payload, callback }, { call, put }) {
+      const data = yield call(fetchAccessToken, payload);
+      if (data && callback) {
+        callback(data);
+      }
+    },
+
+    *addAccessToken({ payload, callback, handleError }, { call, put }) {
+      const data = yield call(addAccessToken, payload, handleError);
+      if (data && callback) {
+        callback(data);
+      }
+    },
+    *putAccessToken({ payload, callback }, { call, put }) {
+      const data = yield call(putAccessToken, payload);
+      if (data && callback) {
+        callback(data);
+      }
+    },
+    *deleteAccessToke({ payload, callback }, { call, put }) {
+      const data = yield call(deleteAccessToke, payload);
+      if (data && callback) {
+        callback(data);
+      }
+    },
     *getTeamByName({ payload, callback, fail }, { call, put, select }) {
       const response = yield call(getTeamByName, payload);
       if (response) {
-        yield put({ type: "saveOtherTeam", team: response.bean });
+        yield put({ type: 'saveOtherTeam', team: response.bean });
         setTimeout(() => {
           callback && callback(response.bean);
         });
@@ -45,13 +80,19 @@ export default {
     *changePass({ payload, callback }, { call, put, select }) {
       const response = yield call(changePass, payload);
       if (response) {
-        yield put({ type: "tologout" });
-        yield put(routerRedux.push("/user/login"));
+        yield put({ type: 'tologout' });
+        yield put(routerRedux.push('/user/login'));
         callback && callback();
       }
     },
+    *searchEnterpriseNoTeamUser({ payload, callback }, { call, put, select }) {
+      const response = yield call(fetchEnterpriseNoTeamUser, payload);
+      if (response) {
+        callback && callback(response);
+      }
+    },
 
-    //第三方认证
+    // 第三方认证
     *fetchThirdCertification(
       { payload, callback, handleError },
       { call, put, select }
@@ -66,28 +107,57 @@ export default {
       }
     },
 
-    //第三方认证信息
+    // 新增收藏视图
+    *addCollectionView({ payload, callback }, { call }) {
+      const response = yield call(addCollectionView, payload);
+      if (response) {
+        callback && callback(response);
+      }
+    },
+    // 收藏视图列表
+    *fetchCollectionViewInfo({ payload, callback }, { call, put }) {
+      const response = yield call(queryCollectionViewInfo, payload);
+      if (response) {
+        yield put({ type: 'saveCollectionList', payload: response });
+        callback && callback(response);
+      }
+    },
+    // 更新视图列表
+    *putCollectionViewInfo({ payload, callback }, { call }) {
+      const response = yield call(putCollectionViewInfo, payload);
+      if (response) {
+        callback && callback(response);
+      }
+    },
+    // 删除收藏视图
+    *deleteCollectionViewInfo({ payload, callback }, { call }) {
+      const response = yield call(deleteCollectionViewInfo, payload);
+      if (response) {
+        callback && callback(response);
+      }
+    },
+    // 第三方认证信息
     *fetchThirdInfo({ payload, callback }, { call, put, select }) {
       const response = yield call(queryThirdInfo, payload);
       if (response) {
         callback && callback(response);
       }
     },
-    //第三方认证类型
+    // 第三方认证类型
     *fetchOauthType({ payload, callback }, { call, put, select }) {
       const response = yield call(queryOauthType, payload);
       if (response) {
         callback && callback(response);
       }
     },
-    //登录后三方用户与用户绑定接口
+    // 登录后三方用户与用户绑定接口
     *fetchThirdBinding({ payload, callback }, { call, put, select }) {
       const response = yield call(queryThirdBinding, payload);
       if (response) {
         callback && callback(response);
       }
     },
-    //登录成功三方用户与用户绑定接口
+    // 登录成功三方用户与用户绑定接口
     *fetchThirdLoginBinding(
       { payload, callback, handleError },
       { call, put, select }
@@ -97,7 +167,7 @@ export default {
         callback && callback(response);
       }
     },
-    //重新认证
+    // 重新认证
     *fetchCertificationThird({ payload, callback }, { call, put, select }) {
       const response = yield call(queryCertificationThird, payload);
       if (response) {
@@ -105,24 +175,14 @@ export default {
       }
     },
 
-    *login({ payload }, { call, put, select }) {
+    *login({ payload, callback }, { call, put, select }) {
       const response = yield call(login, payload);
-      //
-      // cookie.set("token", "f8ocCLBCjzn4qHJU4oOzGwbLgzkdMI");
-      // window.location.reload();
-      //
       if (response) {
-        yield put({ type: "changeLoginStatus", payload: response });
-
-        // 非常粗暴的跳转,登陆成功之后权限会变成user或admin,会自动重定向到主页 Login success after permission
-        // changes to admin or user The refresh will automatically redirect to the home
-        // page yield put(routerRedux.push('/')); cookie.set('token',
-        // response.bean.token); const urlParams = new URL(window.location.href); const
-        // pathname = yield select(state => state.routing.location.pathname); // add the
-        // parameters in the url const redirect = urlParams.searchParams.get('redirect',
-        // pathname); yield put(routerRedux.push('/index'));
-        cookie.set("token", response.bean.token);
-        window.location.reload();
+        yield put({ type: 'changeLoginStatus', payload: response });
+        cookie.set('token', response.bean.token);
+        if (callback) {
+          callback();
+        }
       }
     },
     *thirdLogin({ payload, callback }, { call, put, select }) {
@@ -130,7 +190,7 @@ export default {
 
       if (response) {
         callback && callback(response);
-        yield put({ type: "changeLoginStatus", payload: response });
+        yield put({ type: 'changeLoginStatus', payload: response });
       }
     },
 
@@ -138,40 +198,64 @@ export default {
       try {
         // get location pathname
         const urlParams = new URL(window.location.href);
-        const pathname = yield select(state => state.routing.location.pathname);
+        // const pathname = yield select(state => state.routing.location.pathname);
         // add the parameters in the url
-        urlParams.searchParams.set("redirect", pathname);
-        window.history.replaceState(null, "login", urlParams.href);
+        // urlParams.searchParams.set("redirect", pathname);
+        window.history.replaceState(null, 'login', urlParams.href);
       } finally {
         // yield put(routerRedux.push('/user/login')); Login out after permission
         // changes to admin or user The refresh will automatically redirect to the login
         // page
-        yield put({ type: "tologout" });
+        yield put({ type: 'tologout' });
 
-        yield put({ type: "saveCurrentUser", payload: null });
+        yield put({ type: 'saveCurrentUser', payload: null });
 
-        window.location.reload();
+        yield put(routerRedux.push('/user/login'));
       }
     },
     *register({ payload, complete }, { call, put, select }) {
       const response = yield call(register, payload);
 
       if (response) {
+        if (complete) {
+          complete(response.bean);
+        }
         // 非常粗暴的跳转,登陆成功之后权限会变成user或admin,会自动重定向到主页 Login success after permission
         // changes to admin or user The refresh will automatically redirect to the home
         // page yield put(routerRedux.push('/'));
-        cookie.set("token", response.bean.token);
-
+        cookie.set('token', response.bean.token);
         const urlParams = new URL(window.location.href);
-        const pathname = yield select(state => state.routing.location.pathname);
+
+        const pathname = yield select(state => {
+          return (
+            state &&
+            state.routing &&
+            state.routing.location &&
+            state.routing.location.pathname
+          );
+        });
         // add the parameters in the url
-        const redirect = urlParams.searchParams.get("redirect", pathname);
-        yield put({ type: "registerHandle", payload: response.bean, redirect });
-
-        // yield put(routerRedux.push(redirect || '/index')); window.location.reload();
+        const redirect = pathname
+          ? urlParams.searchParams.get('redirect', pathname)
+          : null;
+        yield put({ type: 'registerHandle', payload: response.bean, redirect });
+        if (
+          response.status_code === 200 &&
+          response.bean &&
+          response.bean.nick_name
+        ) {
+          yield put(
+            routerRedux.push({
+              pathname: '/user/register-result',
+              state: {
+                account: response.bean.nick_name
+              }
+            })
+          );
+        } else {
+          yield put(routerRedux.push('/'));
+        }
       }
-
-      complete && complete();
     },
     *thirdRegister({ payload, callback }, { call, put, select }) {
       const response = yield call(register, payload);
@@ -179,21 +263,21 @@ export default {
         const urlParams = new URL(window.location.href);
         const pathname = yield select(state => state.routing.location.pathname);
         // add the parameters in the url
-        const redirect = urlParams.searchParams.get("redirect", pathname);
-        yield put({ type: "registerHandle", payload: response.bean, redirect });
+        const redirect = urlParams.searchParams.get('redirect', pathname);
+        yield put({ type: 'registerHandle', payload: response.bean, redirect });
         callback && callback(response.bean);
       }
     },
     *fetch(_, { call, put }) {
       const response = yield call(queryUsers);
-      yield put({ type: "save", payload: response });
+      yield put({ type: 'save', payload: response });
     },
     *fetchCurrent({ callback, handleError }, { call, put }) {
       const response = yield call(getDetail, handleError);
       if (response) {
-        yield put({ type: "saveCurrentUser", payload: response.bean });
-        callback && callback(response.bean);
+        yield put({ type: 'saveCurrentUser', payload: response.bean });
       }
+      callback && callback(response);
     },
     *gitlabRegister({ payload, callback }, { call, put }) {
       const response = yield call(gitlabRegister, payload);
@@ -218,7 +302,7 @@ export default {
       };
     },
     changeLoginStatus(state, { payload }) {
-      setAuthority("user");
+      setAuthority('user');
       return {
         ...state,
         status: payload.status,
@@ -226,17 +310,18 @@ export default {
       };
     },
     tologout(state, action) {
-      cookie.remove("token");
-      cookie.remove("token", { domain: "" });
-      cookie.remove("guide");
-      cookie.remove("guide", { domain: "" });
-      cookie.remove("newbie_guide");
-      cookie.remove("platform_url");
+      userUtil.removeCookie();
     },
     save(state, action) {
       return {
         ...state,
         list: action.payload
+      };
+    },
+    saveCollectionList(state, action) {
+      return {
+        ...state,
+        collectionList: action.payload.list
       };
     },
     saveCurrentUser(state, action) {
@@ -246,7 +331,7 @@ export default {
       };
     },
     saveOtherTeam(state, action) {
-      const currentUser = state.currentUser;
+      const { currentUser } = state;
       currentUser.teams.push(action.team);
       return {
         ...state,

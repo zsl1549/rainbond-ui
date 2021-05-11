@@ -1,26 +1,25 @@
-import React, { PureComponent, Fragment } from "react";
-import { connect } from "dva";
-import { Link, Route } from "dva/router";
-import { CopyToClipboard } from "react-copy-to-clipboard";
+/* eslint-disable react/sort-comp */
+/* eslint-disable no-unused-expressions */
+/* eslint-disable react/no-multi-comp */
 import {
-  Row,
-  Col,
-  Card,
-  Form,
   Button,
+  Form,
   Icon,
-  Switch,
-  Alert,
-  Select,
   Modal,
-  Input,
-  Table,
-  message,
-  notification
-} from "antd";
-import appPortUtil from "../../utils/appPort-util";
-import globalUtil from "../../utils/global";
-import styles from "./index.less";
+  notification,
+  Select,
+  Switch,
+  Table
+} from 'antd';
+import { connect } from 'dva';
+import { Link } from 'dva/router';
+import React, { PureComponent } from 'react';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import appPortUtil from '../../utils/appPort-util';
+import globalUtil from '../../utils/global';
+import styles from './index.less';
+
+const { Option } = Select;
 const FormItem = Form.Item;
 
 @connect(({ region, appControl }) => {
@@ -33,14 +32,11 @@ class ChangeProtocol extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      value: this.props.protocol || "http",
-      visibleModal: false,
-      agreement: "",
-      NotHttpConnectInfo: []
+      value: this.props.protocol || 'http'
     };
   }
   onChange = value => {
-    this.setState({ value: value });
+    this.setState({ value });
   };
   handleCancel = () => {
     this.props.onCancel && this.props.onCancel();
@@ -54,7 +50,7 @@ class ChangeProtocol extends PureComponent {
       <Form
         layout="inline"
         style={{
-          position: "relative",
+          position: 'relative',
           top: -8
         }}
       >
@@ -98,9 +94,6 @@ export default class Index extends PureComponent {
     super(props);
     this.state = {
       editProtocol: false,
-      showEditAlias: null,
-      showDomain: false,
-      showPort: false,
       list: []
     };
   }
@@ -151,9 +144,9 @@ export default class Index extends PureComponent {
     this.props.onSubPort && this.props.onSubPort(this.props.port);
   };
   domainsText = domains => {
-    var textBl = false;
+    let textBl = false;
     domains.map(order => {
-      if (order.domain_type == "goodrain-sld") {
+      if (order.domain_type == 'goodrain-sld') {
         textBl = true;
       }
     });
@@ -162,7 +155,7 @@ export default class Index extends PureComponent {
   resolveNotHttp = record => {
     const { dispatch } = this.props;
     dispatch({
-      type: "gateWay/fetchEnvs",
+      type: 'gateWay/fetchEnvs',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: record.service_name
@@ -171,8 +164,8 @@ export default class Index extends PureComponent {
         if (data) {
           const dataList = data.list.filter(item => {
             return (
-              !item.attr_name.endsWith("_HOST") &&
-              !item.attr_name.endsWith("_PORT")
+              !item.attr_name.endsWith('_HOST') &&
+              !item.attr_name.endsWith('_PORT')
             );
           });
           this.setState({
@@ -201,18 +194,18 @@ export default class Index extends PureComponent {
       appDetail.service &&
       appDetail.service.service_alias &&
       appDetail.service.service_source &&
-      appDetail.service.service_source === "third_party" &&
+      appDetail.service.service_source === 'third_party' &&
       appDetail.register_way &&
-      appDetail.register_way === "static"
+      appDetail.register_way === 'static'
     ) {
       dispatch({
-        type: "appControl/getInstanceList",
+        type: 'appControl/getInstanceList',
         payload: {
           team_name: globalUtil.getCurrTeamName(),
           app_alias: appDetail.service.service_alias
         },
         callback: res => {
-          if (res && res._code == 200) {
+          if (res && res.status_code === 200) {
             this.setState({
               list: res.list
             });
@@ -230,22 +223,22 @@ export default class Index extends PureComponent {
         bordered
         columns={[
           {
-            title: "变量名",
-            dataIndex: "attr_name",
-            key: "attr_name",
-            align: "center"
+            title: '变量名',
+            dataIndex: 'attr_name',
+            key: 'attr_name',
+            align: 'center'
           },
           {
-            title: "变量值",
-            dataIndex: "attr_value",
-            key: "attr_value",
-            align: "center"
+            title: '变量值',
+            dataIndex: 'attr_value',
+            key: 'attr_value',
+            align: 'center'
           },
           {
-            title: "说明",
-            dataIndex: "name",
-            key: "name",
-            align: "center"
+            title: '说明',
+            dataIndex: 'name',
+            key: 'name',
+            align: 'center'
           }
         ]}
         pagination={false}
@@ -255,16 +248,16 @@ export default class Index extends PureComponent {
     );
   };
   render() {
-    const port = this.props.port;
+    const { port, currUser } = this.props;
     const outerUrl = appPortUtil.getOuterUrl(port);
     const innerUrl = appPortUtil.getInnerUrl(port);
     const showAlias = appPortUtil.getShowAlias(port);
     const domains = appPortUtil.getDomains(port);
     const tcp_domains = appPortUtil.getTcpDomains(port);
-    var showDomain = this.props.showDomain;
-    var DomainText = this.domainsText(domains);
+    let { showDomain } = this.props;
+    const DomainText = this.domainsText(domains);
     const { agreement } = this.state;
-    //是否显示对外访问地址,创建过程中不显示
+    // 是否显示对外访问地址,创建过程中不显示
     const showOuterUrl =
       this.props.showOuterUrl === void 0 ? true : this.props.showOuterUrl;
     showDomain = showDomain === void 0 ? true : showDomain;
@@ -278,23 +271,30 @@ export default class Index extends PureComponent {
       list.map(item => {
         if (
           !rege.test(item.address) &&
-          (regs.test(item.address || "") || rega.test(item.address || ""))
+          (regs.test(item.address || '') || rega.test(item.address || ''))
         ) {
           num++;
         }
       });
     }
 
-    const { region } = this.props.currUser.teams[0];
+    const { teams } = currUser;
+    const teamName = globalUtil.getCurrTeamName();
+    const currenTeams = teams.filter(item => {
+      return item.team_name === teamName;
+    });
+
+    const region =
+      currenTeams && currenTeams.length > 0 ? currenTeams[0].region : [];
     const currentRegion = region.filter(item => {
-      return item.team_region_name == globalUtil.getCurrRegionName();
+      return item.team_region_name === globalUtil.getCurrRegionName();
     });
 
     return (
       <table
         className={styles.table}
         style={{
-          width: "100%",
+          width: '100%',
           marginBottom: 8
         }}
       >
@@ -316,7 +316,7 @@ export default class Index extends PureComponent {
             </th>
             <th
               style={{
-                width: "50%"
+                width: '50%'
               }}
             >
               服务信息
@@ -324,7 +324,7 @@ export default class Index extends PureComponent {
             {showDomain && (
               <th
                 style={{
-                  width: "30%"
+                  width: '30%'
                 }}
               >
                 访问策略
@@ -352,7 +352,7 @@ export default class Index extends PureComponent {
               ) : (
                 <div>
                   {port.protocol}
-                  <a onClick={this.showEditProtocol} href="javascript:;">
+                  <a onClick={this.showEditProtocol}>
                     <Icon type="edit" />
                   </a>
                 </div>
@@ -361,7 +361,7 @@ export default class Index extends PureComponent {
             <td>
               <div
                 style={{
-                  borderBottom: "1px solid #e8e8e8",
+                  borderBottom: '1px solid #e8e8e8',
                   marginBottom: 8,
                   paddingBottom: 8
                 }}
@@ -376,7 +376,7 @@ export default class Index extends PureComponent {
                 </p>
                 <p>
                   <span className={styles.label}>访问地址</span>
-                  {innerUrl ? innerUrl : "-"}
+                  {innerUrl || '-'}
                 </p>
                 <p className={styles.lr}>
                   <span className={styles.label}>使用别名</span>
@@ -427,30 +427,22 @@ export default class Index extends PureComponent {
                   <div>
                     {domains.map(domain => {
                       return (
-                        <div style={{ paddingLeft: "70px" }}>
-                          {domain.domain_type == "goodrain-sld" ? (
+                        <div style={{ paddingLeft: '70px' }}>
+                          {domain.domain_type == 'goodrain-sld' ? (
                             <p>
                               <a
-                                href={
-                                  (domain.protocol === "http"
-                                    ? "http"
-                                    : "https") +
-                                  "://" +
-                                  domain.domain_name +
-                                  (domain.domain_path
-                                    ? domain.domain_path
-                                    : "/")
-                                }
+                                href={`${
+                                  domain.protocol === 'http' ? 'http' : 'https'
+                                }://${domain.domain_name}${
+                                  domain.domain_path ? domain.domain_path : '/'
+                                }`}
                                 target="_blank"
                               >
-                                {(domain.protocol === "http"
-                                  ? "http"
-                                  : "https") +
-                                  "://" +
-                                  domain.domain_name +
-                                  (domain.domain_path
-                                    ? domain.domain_path
-                                    : "/")}
+                                {`${
+                                  domain.protocol === 'http' ? 'http' : 'https'
+                                }://${domain.domain_name}${
+                                  domain.domain_path ? domain.domain_path : '/'
+                                }`}
                               </a>
                               <a
                                 title="解绑"
@@ -467,14 +459,14 @@ export default class Index extends PureComponent {
                               </a>
                             </p>
                           ) : (
-                            ""
+                            ''
                           )}
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  ""
+                  ''
                 )}
               </div>
             </td>
@@ -486,29 +478,21 @@ export default class Index extends PureComponent {
                     {domains.map(domain => {
                       return (
                         <div>
-                          {domain.domain_type == "www" ? (
+                          {domain.domain_type == 'www' ? (
                             <p>
                               <a
-                                href={
-                                  (domain.protocol === "http"
-                                    ? "http"
-                                    : "https") +
-                                  "://" +
-                                  domain.domain_name +
-                                  (domain.domain_path
-                                    ? domain.domain_path
-                                    : "/")
-                                }
+                                href={`${
+                                  domain.protocol === 'http' ? 'http' : 'https'
+                                }://${domain.domain_name}${
+                                  domain.domain_path ? domain.domain_path : '/'
+                                }`}
                                 target="_blank"
                               >
-                                {(domain.protocol === "http"
-                                  ? "http"
-                                  : "https") +
-                                  "://" +
-                                  domain.domain_name +
-                                  (domain.domain_path
-                                    ? domain.domain_path
-                                    : "/")}
+                                {`${
+                                  domain.protocol === 'http' ? 'http' : 'https'
+                                }://${domain.domain_name}${
+                                  domain.domain_path ? domain.domain_path : '/'
+                                }`}
                               </a>
                               <a
                                 title="解绑"
@@ -525,7 +509,7 @@ export default class Index extends PureComponent {
                               </a>
                             </p>
                           ) : (
-                            ""
+                            ''
                           )}
                         </div>
                       );
@@ -538,7 +522,7 @@ export default class Index extends PureComponent {
                     {tcp_domains.map(domain => {
                       let str = domain.end_point;
                       if (
-                        str.indexOf("0.0.0.0") > -1 &&
+                        str.indexOf('0.0.0.0') > -1 &&
                         currentRegion &&
                         currentRegion.length > 0
                       ) {
@@ -550,29 +534,24 @@ export default class Index extends PureComponent {
 
                       return (
                         <div>
-                          {
-                            <p>
-                              {domain.protocol == "http" ||
-                              domain.protocol == "https" ? (
-                                <a
-                                  href={"http://" + str.replace(/\s+/g, "")}
-                                  target="blank"
-                                >
-                                  {domain.end_point}
-                                </a>
-                              ) : (
-                                <a
-                                  href="javascript:void(0)"
-                                  onClick={this.resolveNotHttp.bind(
-                                    this,
-                                    domain
-                                  )}
-                                >
-                                  {domain.end_point}
-                                </a>
-                              )}
-                            </p>
-                          }
+                          <p>
+                            {domain.protocol == 'http' ||
+                            domain.protocol == 'https' ? (
+                              <a
+                                href={`http://${str.replace(/\s+/g, '')}`}
+                                target="blank"
+                              >
+                                {domain.end_point}
+                              </a>
+                            ) : (
+                              <a
+                                href="javascript:void(0)"
+                                onClick={this.resolveNotHttp.bind(this, domain)}
+                              >
+                                {domain.end_point}
+                              </a>
+                            )}
+                          </p>
                         </div>
                       );
                     })}
@@ -582,34 +561,32 @@ export default class Index extends PureComponent {
                     {tcp_domains.map(domain => {
                       return (
                         <div>
-                          {
-                            <p>
-                              <a href="javascript:void(0)" disabled>
-                                {domain.end_point}
-                              </a>
-                            </p>
-                          }
+                          <p>
+                            <a href="javascript:void(0)" disabled>
+                              {domain.end_point}
+                            </a>
+                          </p>
                         </div>
                       );
                     })}
                   </div>
                 )}
-                {port && port.protocol == "http" && (
+                {port && port.protocol == 'http' && (
                   <Button
                     size="small"
-                    style={{ marginTop: "5px" }}
+                    style={{ marginTop: '5px' }}
                     onClick={this.onAddDomain}
                   >
                     添加域名
                   </Button>
                 )}
-                {port && port.protocol != "http" && (
+                {port && port.protocol != 'http' && (
                   <Link
                     to={`/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/gateway/control/tcp`}
                     style={{
-                      wordBreak: "break-all",
-                      wordWrap: "break-word",
-                      color: "#1890ff"
+                      wordBreak: 'break-all',
+                      wordWrap: 'break-word',
+                      color: '#1890ff'
                     }}
                   >
                     <Button size="small">管理访问策略</Button>
@@ -629,45 +606,46 @@ export default class Index extends PureComponent {
         {this.state.visibleModal && (
           <Modal
             title="访问信息"
+            width="800px"
             visible={this.state.visibleModal}
             footer={null}
             onCancel={this.handeModalCancel}
           >
             <ul className={styles.ul}>
-              {port && port.protocol != "mysql" ? (
-                <li style={{ fontWeight: "bold" }}>
+              {port && port.protocol != 'mysql' ? (
+                <li style={{ fontWeight: 'bold' }}>
                   您当前的访问协议是{port.protocol}
                 </li>
               ) : (
-                <li style={{ fontWeight: "bold" }}>
+                <li style={{ fontWeight: 'bold' }}>
                   您当前的访问协议是{agreement.protocol},打开MySQL客户端访问
                 </li>
               )}
               <li>
                 推荐访问地址&nbsp;
-                <a href="javascript:void(0)" style={{ marginRight: "10px" }}>
-                  {agreement.end_point.indexOf("0.0.0.0") > -1 &&
+                <a href="javascript:void(0)" style={{ marginRight: '10px' }}>
+                  {agreement.end_point.indexOf('0.0.0.0') > -1 &&
                   currentRegion &&
                   currentRegion.length > 0
                     ? agreement.end_point.replace(
                         /0.0.0.0/g,
                         currentRegion[0].tcpdomain
                       )
-                    : agreement.end_point.replace(/\s+/g, "")}
+                    : agreement.end_point.replace(/\s+/g, '')}
                 </a>
                 <CopyToClipboard
                   text={
-                    agreement.end_point.indexOf("0.0.0.0") > -1 &&
+                    agreement.end_point.indexOf('0.0.0.0') > -1 &&
                     currentRegion &&
                     currentRegion.length > 0
                       ? agreement.end_point.replace(
                           /0.0.0.0/g,
                           currentRegion[0].tcpdomain
                         )
-                      : agreement.end_point.replace(/\s+/g, "")
+                      : agreement.end_point.replace(/\s+/g, '')
                   }
                   onCopy={() => {
-                    notification.success({ message: "复制成功" });
+                    notification.success({ message: '复制成功' });
                   }}
                 >
                   <Button size="small" type="primary">

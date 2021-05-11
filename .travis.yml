@@ -1,7 +1,0 @@
-
-services:
-  - docker
-script:
-  - 'bash -c ./build.sh'
-  - 'if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then bash -c ./release.sh ;fi'
-

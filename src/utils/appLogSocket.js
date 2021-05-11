@@ -1,5 +1,6 @@
+/* eslint-disable consistent-return */
+/* eslint-disable no-underscore-dangle */
 /*
-
 	当对应用进行重新部署、启动、关闭、回滚等操作时会先去服务器请求一个操作事件eventId
 	请求成功后会根据这个eventId发起ajax进行相应的操作
 	操作成功后可以用webSocket来获取对应的操作日志信息， 需要把eventId send给服务器
@@ -12,8 +13,8 @@ import TimerQueue from './timerQueue';
 
 function noop() {}
 
-function AppLogSocket(option) {
-  option = option || {};
+function AppLogSocket(op) {
+  const option = op || {};
   this.url = option.url;
   this.serviceId = option.serviceId;
   this.onOpen = option.onOpen || noop;
@@ -27,7 +28,16 @@ function AppLogSocket(option) {
   // 当close 事件发生时， 是否自动重新连接
   this.isAutoConnect = option.isAutoConnect;
   this.destroyed = option.destroyed;
-  this.init();
+  if (
+    this.url &&
+    /(ws|wss):\/\/[\w\-_]+([\w\-_]+)+([\w\-.,@?^=%&:/~+#]*[\w\-@?^=%&/~+#])?/.test(
+      this.url
+    )
+  ) {
+    this.init();
+  } else {
+    this.isAutoConnect = false;
+  }
 }
 
 AppLogSocket.prototype = {
@@ -40,7 +50,7 @@ AppLogSocket.prototype = {
     this.webSocket.onerror = this._onError.bind(this);
     this.timerQueue = new TimerQueue({
       onExecute: this.onMessage,
-      autoStart: true,
+      autoStart: true
     });
     const i = 1;
   },
@@ -50,10 +60,15 @@ AppLogSocket.prototype = {
   close() {
     this.webSocket && this.webSocket.close();
   },
-  _onOpen(evt) {
+  _onOpen() {
     // 通知服务器
-    this.serviceId && this.webSocket.send(`topic=${this.serviceId}`);
-    this.onOpen(this.webSocket);
+    try {
+      this.serviceId && this.webSocket.send(`topic=${this.serviceId}`);
+      this.onOpen(this.webSocket);
+    } catch (err) {
+      console.log('err', err);
+      return false;
+    }
   },
   _onMessage(evt) {
     // 代表连接成功， 不做任何处理
@@ -87,7 +102,7 @@ AppLogSocket.prototype = {
   destroy() {
     this.destroyed = true;
     this.webSocket && this.webSocket.close();
-  },
+  }
 };
 
 export default AppLogSocket;

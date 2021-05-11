@@ -1,26 +1,33 @@
-import axios from "axios";
-import { notification } from "antd";
-import { routerRedux } from "dva/router";
-import store from "../index";
-import cookie from "./cookie";
-import globalUtil from "../utils/global";
+/* eslint-disable no-shadow */
+/* eslint-disable no-void */
+/* eslint-disable no-unused-expressions */
+/* eslint-disable no-underscore-dangle */
+import { notification } from 'antd';
+import axios from 'axios';
+// import { routerRedux } from 'dva/router';
+// import store from "../index";
+// import store from '@/index'
+// const { dispatch } = store;
+import { push } from 'umi/router';
+import globalUtil from '../utils/global';
+import cookie from './cookie';
 
 const codeMessage = {
-  200: "服务器成功返回请求的数据",
-  201: "新建或修改数据成功。",
-  202: "一个请求已经进入后台排队（异步任务）",
-  204: "删除数据成功。",
-  400: "发出的请求有错误，服务器没有进行新建或修改数据,的操作。",
-  401: "用户没有权限（令牌、用户名、密码错误）。",
-  403: "用户得到授权，但是访问是被禁止的。",
-  404: "发出的请求针对的是不存在的记录，服务器没有进行操作",
-  406: "请求的格式不可得。",
-  410: "请求的资源被永久删除，且不会再得到的。",
-  422: "当创建一个对象时，发生一个验证错误。",
-  500: "服务器发生错误，请检查服务器",
-  502: "网关错误",
-  503: "服务不可用，服务器暂时过载或维护",
-  504: "网关超时"
+  200: '服务器成功返回请求的数据',
+  201: '新建或修改数据成功。',
+  202: '一个请求已经进入后台排队（异步任务）',
+  204: '删除数据成功。',
+  400: '发出的请求有错误，服务器没有进行新建或修改数据,的操作。',
+  401: '用户没有权限（令牌、用户名、密码错误）。',
+  403: '用户得到授权，但是访问是被禁止的。',
+  404: '发出的请求针对的是不存在的记录，服务器没有进行操作',
+  406: '请求的格式不可得。',
+  410: '请求的资源被永久删除，且不会再得到的。',
+  422: '当创建一个对象时，发生一个验证错误。',
+  500: '服务器发生错误，请检查服务器',
+  502: '网关错误',
+  503: '服务不可用，服务器暂时过载或维护',
+  504: '网关超时'
 };
 
 function checkStatus(response) {
@@ -28,8 +35,8 @@ function checkStatus(response) {
     return response;
   }
   const errortext = codeMessage[response.status] || response.statusText;
-  notification.error({
-    message: `请求错误 : ${response.url}`,
+  notification.warning({
+    message: `警告 : ${response.url}`,
     description: errortext
   });
 
@@ -49,20 +56,20 @@ function checkStatus(response) {
  */
 export default function request(url, options) {
   const defaultOptions = {
-    credentials: "include"
+    credentials: 'include'
   };
   const newOptions = {
     ...defaultOptions,
     ...options
   };
   // if (newOptions.method === "POST" || newOptions.method === "PUT") {
-    newOptions.headers = {
-      Accept: "application/json",
-      "Content-Type": "application/json; charset=utf-8",
+  newOptions.headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
 
-      ...newOptions.headers
-    };
-    newOptions.body = JSON.stringify(newOptions.body);
+    ...newOptions.headers
+  };
+  newOptions.body = JSON.stringify(newOptions.body);
   // }
 
   if (newOptions.passAuthorization === void 0) {
@@ -73,28 +80,39 @@ export default function request(url, options) {
 
   newOptions.headers = {
     ...headers
-
-    // "Authorization": 'GRJWT '+ (cookie.get('token') ||
-    // 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImxpY2hhbyIsImV4cCI6MTU
-    // x
-    // ODY2MzYyNCwiZW1haWwiOiJsaWNAZ29vZHJhaW4uY29tIiwidXNlcl9pZCI6Nn0.N95RuiLn0nA8T
-    // w RR0TGh6luHnJ9A_IYJtGxHQdtc2jE'), "Authorization": 'GRJWT '+
-    // (cookie.get('token'))
   };
 
-  const token = cookie.get("token");
+  const token = cookie.get('token');
+  const teamName = cookie.get('team_name');
+  const regionName = cookie.get('region_name');
+  let interfaceRegionName = '';
+  let interfaceTeamName = '';
   if (token && newOptions.passAuthorization) {
     newOptions.headers.Authorization = `GRJWT ${token}`;
   }
-  newOptions.headers.X_REGION_NAME = globalUtil.getCurrRegionName();
-  // newOptions.headers.X_REGION_NAME = "rainbond";
-  newOptions.headers.X_TEAM_NAME = globalUtil.getCurrTeamName();
 
-  // newOptions.headers.Authorization = 'GRJWT '+
-  // 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImxpY2hhbyIsImV4cCI6MTU
-  // x
-  // ODY2MzYyNCwiZW1haWwiOiJsaWNAZ29vZHJhaW4uY29tIiwidXNlcl9pZCI6Nn0.N95RuiLn0nA8T
-  // w RR0TGh6luHnJ9A_IYJtGxHQdtc2jE';
+  if (
+    url &&
+    (url.lastIndexOf('/groups') > -1 || url.lastIndexOf('/topological') > -1) &&
+    newOptions.params &&
+    newOptions.params.region_name
+  ) {
+    interfaceRegionName = newOptions.params.region_name;
+  }
+  if (
+    newOptions.data &&
+    newOptions.data.region_name &&
+    newOptions.data.team_name
+  ) {
+    interfaceRegionName = newOptions.data.region_name;
+    interfaceTeamName = newOptions.data.team_name;
+  }
+
+  newOptions.headers.X_REGION_NAME =
+    interfaceRegionName || globalUtil.getCurrRegionName() || regionName;
+  newOptions.headers.X_TEAM_NAME =
+    interfaceTeamName || globalUtil.getCurrTeamName() || teamName;
+
   newOptions.url = url;
   // newOptions.withCredentials = true;
   axios.defaults.withCredentials = true;
@@ -107,88 +125,128 @@ export default function request(url, options) {
   const showLoading =
     newOptions.showLoading === void 0 ? true : newOptions.showLoading;
 
-  let dispatch;
-  if (store) {
-    dispatch = store.dispatch;
-    showLoading && dispatch && dispatch({ type: "global/showLoading" });
-  }
-
+  showLoading &&
+    window.g_app._store.dispatch({
+      type: 'global/showLoading'
+    });
   return axios(newOptions)
     .then(checkStatus)
     .then(response => {
-      showLoading && dispatch && dispatch({ type: "global/hiddenLoading" });
+      showLoading &&
+        window.g_app._store.dispatch({
+          type: 'global/hiddenLoading'
+        });
       const res = response.data.data || {};
       res._code = response.status;
+      res.status_code = response.status;
       res._condition = response.data.code;
+      res.business_code = response.data.code;
       res.msg_show = response.data.msg_show;
       return res;
     })
     .catch(error => {
       if (showLoading) {
-        dispatch && dispatch({ type: "global/hiddenLoading" });
+        window.g_app._store.dispatch({
+          type: 'global/hiddenLoading'
+        });
       }
 
       if (error.response) {
-        const response = error.response;
-        // 请求已发出，但服务器响应的状态码不在 2xx 范围内
-
-        const status = error.response.status;
+        const { response } = error;
+        // 请求已发出，但服务器响应的状态码不在 2xx 范围
 
         let resData = {};
         try {
           resData = error.response.data;
-        } catch (e) {}
+        } catch (e) {
+          console.log(e);
+        }
         if (resData.code === 10410) {
-          dispatch && dispatch({ type: "global/showPayTip" });
+          window.g_app._store.dispatch({
+            type: 'global/showPayTip'
+          });
+          return;
+        }
+
+        if (resData.code >= 20001 && resData.code <= 20003) {
+          window.g_app._store.dispatch({
+            type: 'global/showOrders',
+            payload: {
+              code: resData.code
+            }
+          });
           return;
         }
 
         if (resData.code === 10406) {
-          dispatch &&
-            dispatch({
-              type: "global/showMemoryTip",
-              payload: {
-                message: resData.msg_show
-              }
-            });
+          window.g_app._store.dispatch({
+            type: 'global/showMemoryTip',
+            payload: {
+              message: resData.msg_show
+            }
+          });
+
+          return;
+        }
+        if (resData.code === 10409) {
+          cookie.setGuide('appStore', 'true');
+          notification.warning({ message: '与云市连接超时,请检查网络' });
           return;
         }
         if (resData.code === 10408) {
-          dispatch &&
-            dispatch({
-              type: "global/showNoMoneyTip",
-              payload: {
-                message: resData.msg_show
-              }
-            });
+          window.g_app._store.dispatch({
+            type: 'global/showNoMoneyTip',
+            payload: {
+              message: resData.msg_show
+            }
+          });
+
           return;
         }
-
         if (resData.code === 10407) {
-          dispatch && dispatch({ type: "global/showAuthCompany" });
+          cookie.setGuide('appStore', 'true');
+          window.g_app._store.dispatch({
+            type: 'global/showAuthCompany',
+            payload: {
+              market_name: resData.data.bean.name
+            }
+          });
+
           return;
         }
 
         if (resData.code === 10405) {
-          cookie.remove("token");
-          cookie.remove("token", { domain: "" });
-          cookie.remove("newbie_guide");
-          cookie.remove("platform_url");
-          location.reload();
-          return;
-        }
-        if (resData.code === 10400) {
-          dispatch &&
-            dispatch({
-              type: "global/setNouse",
-              payload: {
-                isNouse: true
-              }
-            });
+          window.g_app._store.dispatch({
+            type: 'global/showNeedLogin'
+          });
           return;
         }
 
-        // 访问资源数据中心与当前数据中心不一致
+        if (resData.code === 10402) {
+          const regionName = globalUtil.getCurrRegionName();
+          const teamName = globalUtil.getCurrTeamName();
+          push(`/team/${teamName}/region/${regionName}/exception/403`);
+        }
+
+        if (resData.code === 10400) {
+          window.g_app._store.dispatch({
+            type: 'global/setNouse',
+            payload: {
+              isNouse: true
+            }
+          });
+          return;
+        }
+        if (resData.code === 10421) {
+          return;
+        }
+        // cluster request error, ignore it
+        if (resData.code === 10411) {
+          console.log(resData);
+          return;
+        }
+
+        // 访问资源集群与当前集群不一致
         if (resData.code === 10404) {
           location.href = globalUtil.replaceUrlRegion(
             resData.data.bean.service_region
@@ -211,26 +269,19 @@ export default function request(url, options) {
 
         const msg = resData.msg_show || resData.msg || resData.detail;
         if (msg && newOptions.showMessage === true) {
-          if (msg.indexOf("身份认证信息未提供") > -1) {
-            cookie.remove("token");
-            cookie.remove("token", { domain: "" });
-            cookie.remove("newbie_guide");
-            cookie.remove("platform_url");
-            location.reload();
+          if (msg.indexOf('身份认证信息未提供') > -1) {
+            push({ type: 'global/showNeedLogin' });
             return;
           }
 
-          notification.error({ message: "请求错误", description: msg });
+          notification.warning({ message: '警告', description: msg });
         }
-        return;
-        // if (status <= 504 && status >= 500) {
-        // dispatch(routerRedux.push('/exception/500'));   return; } if (status >= 404
-        // && status < 422) {   dispatch(routerRedux.push('/exception/404')); }
       } else {
         // Something happened in setting up the request that triggered an Error
-        console.log("Error", error.message);
+        console.log('Error', error.message);
+        if (newOptions.handleError) {
+          newOptions.handleError(error);
+        }
       }
-
-      // return error
     });
 }

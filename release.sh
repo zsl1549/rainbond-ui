@@ -1,14 +1,35 @@
 #!/bin/bash
-
-if [ -z "$TRAVIS_TAG" ]; then
-	VERSION=$TRAVIS_BRANCH-dev
-else
-	VERSION=$TRAVIS_TAG
+if [ -z "$VERSION" ]; then
+	if [ -z "$TRAVIS_TAG" ]; then
+		VERSION=$TRAVIS_BRANCH-dev
+	else
+		VERSION=$TRAVIS_TAG
+	fi
 fi
-docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-docker build -t rainbond/rainbond-ui:$VERSION .
-docker push rainbond/rainbond-ui:$VERSION
-sed -i "s/VERSION/$VERSION/g" ./build/Dockerfile
-mv dist build/dist
-docker build -t rainbond/rbd-app-ui:$VERSION ./build
-docker push rainbond/rbd-app-ui:$VERSION
+
+BASE_VERSION=V5.3
+
+IMAGE_DOMAIN=${IMAGE_DOMAIN:-docker.io}
+IMAGE_NAMESPACE=${IMAGE_NAMESPACE:-rainbond}
+IMAGE_NAME="${IMAGE_DOMAIN}/${IMAGE_NAMESPACE}/rainbond-ui:$VERSION"
+
+BUILD_RBD_APP_UI=${BUILD_RBD_APP_UI:-true}
+DOMESTIC_BASE_NAME=${DOMESTIC_BASE_NAME:-'registry.cn-hangzhou.aliyuncs.com'}
+DOMESTIC_NAMESPACE=${DOMESTIC_NAMESPACE:-'goodrain'}
+
+echo "$DOCKER_PASSWORD" | docker login ${IMAGE_DOMAIN} -u "$DOCKER_USERNAME" --password-stdin
+docker build --build-arg BASE_VERSION="${BASE_VERSION}" --build-arg IMAGE_DOMAIN="${IMAGE_DOMAIN}" --build-arg IMAGE_NAMESPACE="${IMAGE_NAMESPACE}" -t ${IMAGE_NAME} .
+docker push ${IMAGE_NAME}
+
+if [ ${BUILD_RBD_APP_UI} == "true" ]; then
+	mv dist build/dist
+	docker build --build-arg VERSION="${VERSION}" --build-arg IMAGE_DOMAIN="${IMAGE_DOMAIN}" --build-arg IMAGE_NAMESPACE="${IMAGE_NAMESPACE}" -t "${IMAGE_DOMAIN}/${IMAGE_NAMESPACE}/rbd-app-ui:$VERSION" ./build
+	docker push "${IMAGE_DOMAIN}/${IMAGE_NAMESPACE}/rbd-app-ui:$VERSION"
+
+	if [ ${DOMESTIC_BASE_NAME} ]; then
+		newTag="${DOMESTIC_BASE_NAME}/${DOMESTIC_NAMESPACE}/rbd-app-ui:${VERSION}"
+		docker tag "rainbond/rbd-app-ui:$VERSION" "${newTag}"
+		docker login -u "$DOMESTIC_DOCKER_USERNAME" -p "$DOMESTIC_DOCKER_PASSWORD" ${DOMESTIC_BASE_NAME}
+		docker push "${newTag}"
+	fi
+fi

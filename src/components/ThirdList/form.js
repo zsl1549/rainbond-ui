@@ -1,40 +1,15 @@
-import React, { PureComponent, Fragment } from "react";
-import debounce from "lodash.debounce";
-import globalUtil from "../../utils/global";
-import { connect } from "dva";
-import { routerRedux } from "dva/router";
-import config from "../../config/config";
-import App from "../../../public/images/app.svg";
-import Branches from "../../../public/images/branches.svg";
-import Application from "../../../public/images/application.svg";
-import Component from "../../../public/images/component.svg";
-import Unlock from "../../../public/images/unlock.svg";
-import AddGroup from "../../components/AddOrEditGroup";
-import styles from "./Index.less";
+/* eslint-disable import/first */
+import { Button, Form, Input, Select, Spin, Switch, Tabs } from 'antd';
+import { connect } from 'dva';
+import React, { Fragment } from 'react';
+import Application from '../../../public/images/application.svg';
+import Branches from '../../../public/images/branches.svg';
+import Component from '../../../public/images/component.svg';
+import Unlock from '../../../public/images/unlock.svg';
+import AddGroup from '../../components/AddOrEditGroup';
+import globalUtil from '../../utils/global';
+import styles from './Index.less';
 
-import {
-  List,
-  Avatar,
-  Icon,
-  Skeleton,
-  Badge,
-  Row,
-  Tabs,
-  Col,
-  Input,
-  Card,
-  Typography,
-  Pagination,
-  Modal,
-  Form,
-  Select,
-  Button,
-  Spin,
-  Switch
-} from "antd";
-
-const { Search } = Input;
-const { Text } = Typography;
 const { Option, OptGroup } = Select;
 const { TabPane } = Tabs;
 
@@ -59,7 +34,7 @@ const formItemLayoutOrder = {
   ({ user, global, loading }) => ({
     currUser: user.currentUser,
     groups: global.groups,
-    createAppByCodeLoading: loading.effects["createApp/createThirtAppByCode"]
+    createAppByCodeLoading: loading.effects['createApp/createThirtAppByCode']
   }),
   null,
   null,
@@ -70,10 +45,9 @@ class Index extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      visible: false,
       addGroup: false,
       tags: [],
-      tabType: "branches",
+      tabType: 'branches',
       tagsLoading: true,
       Loading: true
     };
@@ -86,21 +60,29 @@ class Index extends React.Component {
       this.handleCodeWarehouseType(nextProps);
     }
   }
-  //get repostory tag or branchs
+  onTabChange = tabType => {
+    this.setState({ tabType, tagsLoading: true }, () => {
+      this.handleCodeWarehouseType(this.props);
+    });
+  };
+  onAddGroup = () => {
+    this.setState({ addGroup: true });
+  };
+  // get repostory tag or branchs
   handleCodeWarehouseType = props => {
     const { dispatch, type, thirdInfo } = props;
     const { tabType } = this.state;
     dispatch({
-      type: "global/codeWarehouseType",
+      type: 'global/codeWarehouseType',
       payload: {
         type: tabType,
-        full_name: thirdInfo ? thirdInfo.project_full_name : "",
+        full_name: thirdInfo ? thirdInfo.project_full_name : '',
         oauth_service_id: type
       },
       callback: res => {
-        if (res && res._code === 200) {
+        if (res && res.status_code === 200) {
           this.setState({
-            tags: res.bean[tabType],
+            tags: res.bean ? res.bean[tabType] : [],
             tagsLoading: false,
             Loading: false
           });
@@ -108,32 +90,13 @@ class Index extends React.Component {
       }
     });
   };
-  onAddGroup = () => {
-    this.setState({ addGroup: true });
-  };
+
   cancelAddGroup = () => {
     this.setState({ addGroup: false });
   };
-  showModal = () => {
-    this.setState({
-      visible: true
-    });
-  };
-
-  handleOk = e => {
-    this.setState({
-      visible: false
-    });
-  };
-
-  handleCancel = e => {
-    this.setState({
-      visible: false
-    });
-  };
   handleSubmit = e => {
     e.preventDefault();
-    const form = this.props.form;
+    const { form, thirdInfo, onSubmit } = this.props;
     const { tagsLoading } = this.state;
     if (tagsLoading) {
       return null;
@@ -142,23 +105,19 @@ class Index extends React.Component {
       if (err) {
         return;
       }
-      fieldsValue.project_id = this.props.thirdInfo.project_id;
-      fieldsValue.project_url = this.props.thirdInfo.project_url;
-      fieldsValue.project_full_name = this.props.thirdInfo.project_full_name;
-      this.props.onSubmit && this.props.onSubmit(fieldsValue);
-    });
-  };
-
-  onTabChange = tabType => {
-    this.setState({ tabType, tagsLoading: true }, () => {
-      this.handleCodeWarehouseType(this.props);
+      fieldsValue.project_id = thirdInfo.project_id;
+      fieldsValue.project_url = thirdInfo.project_url;
+      fieldsValue.project_full_name = thirdInfo.project_full_name;
+      if (onSubmit) {
+        onSubmit(fieldsValue);
+      }
     });
   };
 
   handleAddGroup = vals => {
     const { setFieldsValue } = this.props.form;
     this.props.dispatch({
-      type: "groupControl/addGroup",
+      type: 'application/addGroup',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         ...vals
@@ -167,13 +126,13 @@ class Index extends React.Component {
         if (group) {
           // 获取群组
           this.props.dispatch({
-            type: "global/fetchGroups",
+            type: 'global/fetchGroups',
             payload: {
               team_name: globalUtil.getCurrTeamName(),
               region_name: globalUtil.getCurrRegionName()
             },
             callback: () => {
-              setFieldsValue({ group_id: group.ID });
+              setFieldsValue({ group_id: group.group_id });
               this.cancelAddGroup();
             }
           });
@@ -184,12 +143,13 @@ class Index extends React.Component {
 
   render() {
     const { tags, addGroup, tagsLoading, Loading } = this.state;
-    const { getFieldDecorator, getFieldValue } = this.props.form;
+    const { getFieldDecorator } = this.props.form;
     const {
       groups,
       createAppByCodeLoading,
       ServiceComponent,
-      thirdInfo
+      thirdInfo,
+      groupId
     } = this.props;
     const showCreateGroup =
       this.props.showCreateGroup === void 0 ? true : this.props.showCreateGroup;
@@ -215,18 +175,20 @@ class Index extends React.Component {
                 </div>
               }
             >
-              {getFieldDecorator("group_id", {
-                initialValue: groups && groups.length > 0 && groups[0].group_id,
-                rules: [{ required: true, message: "请选择" }]
+              {getFieldDecorator('group_id', {
+                initialValue:
+                  +groupId ||
+                  (groups && groups.length > 0 && groups[0].group_id),
+                rules: [{ required: true, message: '请选择' }]
               })(
                 <Select
                   placeholder="请选择要所属应用"
                   style={{
-                    display: "inline-block",
-                    width: ServiceComponent ? "" : 292,
+                    display: 'inline-block',
+                    width: ServiceComponent ? '' : 292,
                     marginRight: 15
                   }}
-                  disabled={ServiceComponent ? true : false}
+                  disabled={!!ServiceComponent}
                 >
                   {(groups || []).map(group => (
                     <Option key={group.group_id} value={group.group_id}>
@@ -249,9 +211,9 @@ class Index extends React.Component {
                 </div>
               }
             >
-              {getFieldDecorator("service_cname", {
-                initialValue: thirdInfo ? thirdInfo.project_name : "",
-                rules: [{ required: true, message: "要创建的组件还没有名字" }]
+              {getFieldDecorator('service_cname', {
+                initialValue: thirdInfo ? thirdInfo.project_name : '',
+                rules: [{ required: true, message: '要创建的组件还没有名字' }]
               })(<Input placeholder="请为创建的组件起个名字吧" />)}
             </Form.Item>
 
@@ -265,9 +227,9 @@ class Index extends React.Component {
                 </div>
               }
             >
-              {getFieldDecorator("code_version", {
+              {getFieldDecorator('code_version', {
                 initialValue: tags && tags.length > 0 && tags[0],
-                rules: [{ required: true, message: "请输入代码版本" }]
+                rules: [{ required: true, message: '请输入代码版本' }]
               })(
                 <Select placeholder="请输入代码版本">
                   <OptGroup
@@ -291,7 +253,7 @@ class Index extends React.Component {
                         );
                       })
                     ) : (
-                      <Option value={"loading"}>
+                      <Option value="loading">
                         <Spin spinning={tagsLoading} />
                       </Option>
                     )}
@@ -309,14 +271,14 @@ class Index extends React.Component {
                 </div>
               }
             >
-              {getFieldDecorator("Cascader", {
+              {getFieldDecorator('open_webhook', {
                 initialValue: false,
-                rules: [{ required: true, message: "请选择" }]
+                rules: [{ required: true, message: '请选择' }]
               })(<Switch />)}
             </Form.Item>
 
             {showSubmitBtn ? (
-              <div style={{ textAlign: "center" }}>
+              <div style={{ textAlign: 'center' }}>
                 {ServiceComponent && this.props.ButtonGroupState
                   ? this.props.handleServiceBotton(
                       <Button

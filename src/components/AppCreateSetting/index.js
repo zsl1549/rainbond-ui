@@ -1,1424 +1,47 @@
-import React, { PureComponent, Fragment } from "react";
 import {
-  Button,
-  Icon,
-  Card,
-  Modal,
-  Row,
-  Col,
-  Switch,
-  Table,
-  Radio,
-  Tabs,
   Affix,
-  Input,
+  Button,
+  Card,
+  Col,
   Form,
-  Tooltip,
-  Checkbox,
-  notification
-} from "antd";
-import { connect } from "dva";
-import { routerRedux } from "dva/router";
-import globalUtil from "../../utils/global";
-import { Link } from "dva/router";
-import httpResponseUtil from "../../utils/httpResponse";
-import styles from "./setting.less";
-import Port from "../../components/Port";
+  Icon,
+  notification,
+  Radio,
+  Row,
+  Table,
+  Tooltip
+} from 'antd';
+import { connect } from 'dva';
+import { Link } from 'dva/router';
+import React, { Fragment, PureComponent } from 'react';
+import AddOrEditVolume from '../../components/AddOrEditVolume';
+import AddPort from '../../components/AddPort';
+import AddRelation from '../../components/AddRelation';
+import AddRelationMnt from '../../components/AddRelationMnt';
+import ConfirmModal from '../../components/ConfirmModal';
+import EditPortAlias from '../../components/EditPortAlias';
+import EnvironmentVariable from '../../components/EnvironmentVariable';
+import NoPermTip from '../../components/NoPermTip';
+import Port from '../../components/Port';
+import ViewRelationInfo from '../../components/ViewRelationInfo';
 import {
-  getMnt,
   addMnt,
+  batchAddRelationedApp,
+  getMnt,
   getRelationedApp,
-  getUnRelationedApp,
-  addRelationedApp,
-  removeRelationedApp,
-  batchAddRelationedApp
-} from "../../services/app";
-import EditPortAlias from "../../components/EditPortAlias";
-import ConfirmModal from "../../components/ConfirmModal";
-import AddPort from "../../components/AddPort";
-import AddOrEditEnv from "../../components/AddOrEditEnv";
-import AddOrEditVolume from "../../components/AddOrEditVolume";
-import AddRelationMnt from "../../components/AddRelationMnt";
-import AddRelation from "../../components/AddRelation";
-import ViewRelationInfo from "../../components/ViewRelationInfo";
-import appUtil from "../../utils/app";
-import { volumeTypeObj } from "../../utils/utils";
-import Dockerinput from "../../components/Dockerinput";
+  removeRelationedApp
+} from '../../services/app';
+import appUtil from '../../utils/app';
+import globalUtil from '../../utils/global';
+import roleUtil from '../../utils/role';
+import { getVolumeTypeShowName } from '../../utils/utils';
+import CodeBuildConfig from '../CodeBuildConfig';
+import styles from './setting.less';
 
 const RadioButton = Radio.Button;
 const RadioGroup = Radio.Group;
-const TabPane = Tabs.TabPane;
-const { TextArea } = Input;
-const confirm = Modal.confirm;
-//node.js
-@connect(
-  ({ user, appControl, teamControl }) => ({ currUser: user.currentUser }),
-  null,
-  null,
-  { withRef: true }
-)
-@Form.create()
-class Nodejs extends PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {};
-  }
-  componentDidMount() {}
-  isShowRuntime = () => {
-    const runtimeInfo = this.props.runtimeInfo || {};
-    return runtimeInfo.runtimes === false;
-  };
-  handleSubmit = e => {
-    const form = this.props.form;
-    form.validateFields((err, fieldsValue) => {
-      if (err) return;
-      this.props.onSubmit &&
-        this.props.onSubmit({
-          ...fieldsValue
-        });
-    });
-  };
-  getDefaultRuntime = () => {
-    return "-1";
-  };
-  render() {
-    const formItemLayout = {
-      labelCol: {
-        xs: {
-          span: 24
-        },
-        sm: {
-          span: 3
-        }
-      },
-      wrapperCol: {
-        xs: {
-          span: 24
-        },
-        sm: {
-          span: 21
-        }
-      }
-    };
-    const { getFieldDecorator, getFieldValue } = this.props.form;
-    const { userRunTimeInfo } = this.props;
-    // if (!this.isShowRuntime())
-    //   return null;
-    return (
-      <Card
-        title="node版本支持"
-        style={{
-          marginBottom: 16
-        }}
-      >
-        <Form.Item {...formItemLayout} label="版本">
-          {getFieldDecorator("service_runtimes", {
-            initialValue: userRunTimeInfo.runtimes,
-            rules: [
-              {
-                required: true,
-                message: "请选择"
-              }
-            ]
-          })(
-            <RadioGroup disabled className={styles.ant_radio_disabled}>
-              <Radio value="5.12.0">5.12.0</Radio>
-              <Radio value="6.14.4">6.14.4</Radio>
-              <Radio value="7.10.1">7.10.1</Radio>
-              <Radio value="8.12.0">8.12.0</Radio>
-              <Radio value="9.11.2">9.11.2</Radio>
-            </RadioGroup>
-          )}
-        </Form.Item>
-        {/* <Form.Item {...formItemLayout} label="运行命令">
-          {getFieldDecorator('service_runtimes', {
-            initialValue: '',
-            rules: [
-              {
-                required: true,
-                message: '请输入'
-              }
-            ]
-          })(<TextArea placeholder="例如：node demo.js" />)}
-        </Form.Item> */}
-        {/* <Row>
-          <Col span="5"></Col>
-          <Col span="19">
-            <Button onClick={this.handleSubmit} type={'primary'}>确认修改</Button>
-          </Col>
-        </Row> */}
-      </Card>
-    );
-  }
-}
 
-//Golang
-@connect(
-  ({ user, appControl, teamControl }) => ({ currUser: user.currentUser }),
-  null,
-  null,
-  { withRef: true }
-)
-@Form.create()
-class Golang extends PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {};
-  }
-  componentDidMount() {
-    if (this.isShowRuntime()) {
-      this.onChange({
-        service_runtimes: this.getDefaultRuntime()
-      });
-    }
-  }
-  onChange = value => {
-    this.props.dispatch({ type: "createApp/saveRuntimeInfo", payload: value });
-  };
-  getDefaultRuntime = () => {
-    return "1.11.2";
-  };
-  isShowRuntime = () => {
-    const runtimeInfo = this.props.runtimeInfo || {};
-    return runtimeInfo.runtimes === false;
-  };
-  handleSubmit = e => {
-    const form = this.props.form;
-    form.validateFields((err, fieldsValue) => {
-      if (err) return;
-      this.props.onSubmit &&
-        this.props.onSubmit({
-          ...fieldsValue
-        });
-    });
-  };
-  render() {
-    const formItemLayout = {
-      labelCol: {
-        xs: {
-          span: 24
-        },
-        sm: {
-          span: 3
-        }
-      },
-      wrapperCol: {
-        xs: {
-          span: 24
-        },
-        sm: {
-          span: 21
-        }
-      }
-    };
-    const { getFieldDecorator, getFieldValue } = this.props.form;
-    const { userRunTimeInfo } = this.props;
-    // if (!this.isShowRuntime())
-    //   return null;
-    return (
-      <Card
-        title="Golang版本支持"
-        style={{
-          marginBottom: 16
-        }}
-      >
-        <Form.Item {...formItemLayout} label="版本">
-          {getFieldDecorator("service_runtimes", {
-            initialValue: userRunTimeInfo.runtimes || this.getDefaultRuntime(),
-            rules: [
-              {
-                required: true,
-                message: "请选择"
-              }
-            ]
-          })(
-            <RadioGroup disabled className={styles.ant_radio_disabled}>
-              <Radio value="1.9.7">1.9.7</Radio>
-              <Radio value="1.8.7">1.8.7</Radio>
-              <Radio value="1.11.2">1.11.2(默认)</Radio>
-              <Radio value="1.11">1.11</Radio>
-              <Radio value="1.11.1">1.11.1</Radio>
-              <Radio value="1.10.5">1.10.5</Radio>
-              <Radio value="1.10.4">1.10.4</Radio>
-            </RadioGroup>
-          )}
-        </Form.Item>
-        {/* <Row>
-          <Col span="5"></Col>
-          <Col span="19">
-            <Button onClick={this.handleSubmit} type={'primary'}>确认修改</Button>
-          </Col>
-        </Row> */}
-      </Card>
-    );
-  }
-}
-
-//python
-@connect(
-  ({ user, appControl, teamControl }) => ({
-    currUser: user.currentUser,
-    appDetail: appControl.appDetail
-  }),
-  null,
-  null,
-  { withRef: true }
-)
-@Form.create()
-class Python extends PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {};
-  }
-  componentDidMount() {}
-  onChange = value => {
-    this.props.dispatch({ type: "createApp/saveRuntimeInfo", payload: value });
-  };
-  getDefaultRuntime = () => {
-    return "2.7.15";
-  };
-  isShowRuntime = () => {
-    const runtimeInfo = this.props.runtimeInfo || {};
-    return runtimeInfo.runtimes === false;
-  };
-  handleSubmit = e => {
-    const form = this.props.form;
-    form.validateFields((err, fieldsValue) => {
-      if (err) return;
-      this.props.onSubmit &&
-        this.props.onSubmit({
-          ...fieldsValue
-        });
-    });
-  };
-  render() {
-    const formItemLayout = {
-      labelCol: {
-        xs: {
-          span: 24
-        },
-        sm: {
-          span: 3
-        }
-      },
-      wrapperCol: {
-        xs: {
-          span: 24
-        },
-        sm: {
-          span: 21
-        }
-      }
-    };
-    const { getFieldDecorator, getFieldValue } = this.props.form;
-    const { userRunTimeInfo } = this.props;
-    // if (!this.isShowRuntime()) {
-    //   return null;
-    // }
-
-    return (
-      <Card title="Python版本支持">
-        <Form.Item {...formItemLayout} label="版本">
-          {getFieldDecorator("service_runtimes", {
-            initialValue: userRunTimeInfo.runtimes || this.getDefaultRuntime(),
-            rules: [
-              {
-                required: true,
-                message: "请选择"
-              }
-            ]
-          })(
-            <RadioGroup disabled className={styles.ant_radio_disabled}>
-              <Radio value="2.7.15">2.7.15(默认)</Radio>
-              <Radio value="3.6.6">3.6.6</Radio>
-              <Radio value="3.7.1">3.7.1</Radio>
-            </RadioGroup>
-          )}
-        </Form.Item>
-        {/* <Row>
-          <Col span="5"></Col>
-          <Col span="19">
-            <Button onClick={this.handleSubmit} type={'primary'}>确认修改</Button>
-          </Col>
-        </Row> */}
-      </Card>
-    );
-  }
-}
-
-//java
-@connect(
-  ({ user, appControl, teamControl }) => ({
-    currUser: user.currentUser,
-    appDetail: appControl.appDetail
-  }),
-  null,
-  null,
-  { withRef: true }
-)
-@Form.create()
-class JAVA extends PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      NO_CACHE: this.props.runtimeInfo.NO_CACHE ? true : false,
-      BUILD_MAVEN_MIRROR_DISABLE: this.props.runtimeInfo
-        .BUILD_MAVEN_MIRROR_DISABLE
-        ? true
-        : false,
-      DEBUG: false,
-      BUILD_DEBUG_INFO: false,
-      BUILD_ENABLE_ORACLEJDK: this.props.runtimeInfo.BUILD_ENABLE_ORACLEJDK
-        ? true
-        : false,
-      JDKType:
-        props.runtimeInfo && props.runtimeInfo.BUILD_RUNTIMES
-          ? "OpenJDK"
-          : props.runtimeInfo && props.runtimeInfo.BUILD_ENABLE_ORACLEJDK
-          ? "Jdk"
-          : props.form.getFieldValue("RUNTIMES")
-          ? props.form.getFieldValue("RUNTIMES")
-          : "OpenJDK",
-      languageType: this.props.language,
-      BUILD_ONLINE: false,
-      NODE_MODULES_CACHE: false,
-      NODE_VERBOSE: false,
-      arr: [],
-      setObj: props.runtimeInfo ? props.runtimeInfo : ""
-    };
-  }
-  componentWillReceiveProps(nextProps) {
-    if (
-      nextProps.runtimeInfo !== this.props.runtimeInfo ||
-      nextProps.languageType !== this.state.languageType
-    ) {
-      this.handleRuntimeInfo(nextProps);
-      this.setArr(nextProps);
-    }
-  }
-  componentDidMount() {
-    this.handleRuntimeInfo(this.props);
-    this.setArr(this.props);
-  }
-
-  setArr = props => {
-    const { runtimeInfo, language } = props;
-    if (language == "dockerfile" && runtimeInfo != "") {
-      let arr = [];
-      for (let i in runtimeInfo) {
-        let keyName = i + "";
-        if (keyName.startsWith("BUILD_ARG_")) {
-          keyName = keyName.substr(10, i.length);
-        }
-        arr.push({ key: keyName, value: runtimeInfo[i] });
-      }
-      this.setState({
-        arr
-      });
-    }
-  };
-  handleRuntimeInfo = props => {
-    this.setState({
-      languageType: props.language
-    });
-  };
-
-  handleSubmit = e => {
-    const form = this.props.form;
-    const { runtimeInfo } = this.props;
-    const { languageType } = this.state;
-    let subObject = {};
-    const {
-      NO_CACHE,
-      BUILD_ENABLE_ORACLEJDK,
-      BUILD_MAVEN_MIRROR_DISABLE,
-      DEBUG,
-      BUILD_DEBUG_INFO,
-      BUILD_ONLINE,
-      NODE_MODULES_CACHE,
-      NODE_VERBOSE,
-      arr,
-      setObj
-    } = this.state;
-    form.validateFields((err, fieldsValue) => {
-      // if (err) return;
-      const {
-        BUILD_RUNTIMES,
-        BUILD_ORACLEJDK_URL,
-        BUILD_RUNTIMES_MAVEN,
-        BUILD_RUNTIMES_SERVER,
-        BUILD_DOTNET_SDK_VERSION,
-        BUILD_MAVEN_MIRROR_OF,
-        BUILD_MAVEN_MIRROR_URL,
-        BUILD_MAVEN_CUSTOM_OPTS,
-        BUILD_MAVEN_CUSTOM_GOALS,
-        BUILD_MAVEN_JAVA_OPTS,
-        BUILD_PROCFILE,
-        OpenJDK,
-        BUILD_PIP_INDEX_URL,
-        // BUILD_RUNTIMES_HHVM,
-        BUILD_DOTNET_RUNTIME_VERSION,
-        RUNTIMES,
-        set_dockerfile
-      } = fieldsValue;
-
-
-
-      NO_CACHE ? (subObject.NO_CACHE = true) : "";
-      BUILD_MAVEN_MIRROR_DISABLE
-        ? (subObject.BUILD_MAVEN_MIRROR_DISABLE = true)
-        : "";
-
-      if (
-        languageType == "java-maven" ||
-        languageType == "Java-maven" ||
-        languageType == "java-jar" ||
-        languageType == "Java-jar" ||
-        languageType == "java-war" ||
-        languageType == "Java-war" ||
-        languageType == "Gradle" ||
-        languageType == "gradle" ||
-        languageType == "java-gradle" ||
-        languageType == "Java-gradle" ||
-        languageType == "JAVAGradle"
-      ) {
-        if (RUNTIMES == "Jdk" && BUILD_ORACLEJDK_URL) {
-          subObject.BUILD_ORACLEJDK_URL = BUILD_ORACLEJDK_URL;
-          subObject.BUILD_ENABLE_ORACLEJDK = true;
-        } else if (BUILD_RUNTIMES) {
-          subObject.BUILD_RUNTIMES = BUILD_RUNTIMES;
-        }
-      } else {
-        BUILD_RUNTIMES ? (subObject.BUILD_RUNTIMES = BUILD_RUNTIMES) : "";
-      }
-
-      BUILD_RUNTIMES_MAVEN
-        ? (subObject.BUILD_RUNTIMES_MAVEN = BUILD_RUNTIMES_MAVEN)
-        : "";
-      BUILD_RUNTIMES_SERVER
-        ? (subObject.BUILD_RUNTIMES_SERVER = BUILD_RUNTIMES_SERVER)
-        : "";
-      BUILD_DOTNET_SDK_VERSION
-        ? (subObject.BUILD_DOTNET_SDK_VERSION = BUILD_DOTNET_SDK_VERSION)
-        : "";
-      BUILD_MAVEN_MIRROR_OF
-        ? (subObject.BUILD_MAVEN_MIRROR_OF = BUILD_MAVEN_MIRROR_OF)
-        : "";
-      BUILD_MAVEN_MIRROR_URL
-        ? (subObject.BUILD_MAVEN_MIRROR_URL = BUILD_MAVEN_MIRROR_URL)
-        : "";
-      BUILD_MAVEN_CUSTOM_OPTS
-        ? (subObject.BUILD_MAVEN_CUSTOM_OPTS = BUILD_MAVEN_CUSTOM_OPTS)
-        : "";
-      BUILD_MAVEN_CUSTOM_GOALS
-        ? (subObject.BUILD_MAVEN_CUSTOM_GOALS = BUILD_MAVEN_CUSTOM_GOALS)
-        : "";
-      BUILD_MAVEN_JAVA_OPTS
-        ? (subObject.BUILD_MAVEN_JAVA_OPTS = BUILD_MAVEN_JAVA_OPTS)
-        : "";
-      BUILD_PROCFILE ? (subObject.BUILD_PROCFILE = BUILD_PROCFILE) : "";
-      OpenJDK ? (subObject.OpenJDK = OpenJDK) : "";
-      BUILD_PIP_INDEX_URL
-        ? (subObject.BUILD_PIP_INDEX_URL = BUILD_PIP_INDEX_URL)
-        : "";
-      // BUILD_RUNTIMES_HHVM ? subObject.BUILD_RUNTIMES_HHVM = BUILD_RUNTIMES_HHVM : ""
-      BUILD_DOTNET_RUNTIME_VERSION
-        ? (subObject.BUILD_DOTNET_RUNTIME_VERSION = BUILD_DOTNET_RUNTIME_VERSION)
-        : "";
-
-      if (languageType && languageType == "dockerfile") {
-        this.props.onSubmit &&
-          this.props.onSubmit(setObj ? setObj : runtimeInfo);
-      } else {
-        this.props.onSubmit && this.props.onSubmit(subObject);
-      }
-    });
-  };
-
-  handleDisabledName = name => {
-    this.setState({
-      [name]: true
-    });
-  };
-
-  handleRadio = name => {
-    this.setState({
-      [name]: !this.state[name]
-    });
-  };
-  onRadioChange = e => {};
-
-  onRadioGroupChange = e => {
-    this.setState({
-      JDKType: e.target.value
-    });
-  };
-
-  showConfirm = () => {
-    const _th = this;
-    confirm({
-      title: "确认修改吗?",
-      content: "",
-      onOk() {
-        _th.handleSubmit();
-      },
-      onCancel() {
-        console.log("Cancel");
-      }
-    });
-  };
-
-  onSetObj = value => {
-    let obj = {};
-    value.map(item => {
-      obj["BUILD_ARG_" + item.key] = item.value;
-    });
-    this.setState({ setObj: obj });
-  };
-
-  validCustomJDK = (rule, value, callback) => {
-    const runtime = this.props.form.getFieldValue("RUNTIMES");
-    if (runtime == "Jdk") {
-      if (!value) {
-        callback("自定义JDK下载地址不能为空");
-      }
-    }
-    callback();
-  };
-
-  render() {
-    const runtimeInfo = this.props.runtimeInfo || "";
-    const language = this.props.language;
-    const formItemLayout = {
-      labelCol: {
-        xs: {
-          span: 6
-        },
-        sm: {
-          span: 6
-        }
-      },
-      wrapperCol: {
-        xs: {
-          span: 18
-        },
-        sm: {
-          span: 18
-        }
-      }
-    };
-
-    const { getFieldDecorator } = this.props.form;
-    const jdkShow = () => {
-      return (
-        <div>
-          <Form.Item {...formItemLayout} label="选择JDK版本">
-            {getFieldDecorator("RUNTIMES", {
-              initialValue:
-                runtimeInfo && runtimeInfo.BUILD_RUNTIMES
-                  ? "OpenJDK"
-                  : runtimeInfo && runtimeInfo.BUILD_ENABLE_ORACLEJDK
-                  ? "Jdk"
-                  : "OpenJDK"
-            })(
-              <RadioGroup
-                className={styles.ant_radio_disabled}
-                onChange={this.onRadioGroupChange}
-              >
-                <Radio value="OpenJDK">内置OpenJDK</Radio>
-                <Radio value="Jdk">自定义JDK</Radio>
-              </RadioGroup>
-            )}
-          </Form.Item>
-
-          {JDKType == "OpenJDK" && (
-            <Form.Item {...formItemLayout} label="OpenJDK版本">
-              {getFieldDecorator("BUILD_RUNTIMES", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_RUNTIMES) || "1.8"
-              })(
-                <RadioGroup>
-                  <Radio value="1.8">1.8(默认)</Radio>
-                  <Radio value="1.6">1.6</Radio>
-                  <Radio value="1.7">1.7</Radio>
-                  <Radio value="1.9">1.9</Radio>
-                  <Radio value="10">10</Radio>
-                  <Radio value="11">11</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-          )}
-
-          {JDKType == "Jdk" && (
-            <Form.Item {...formItemLayout} label="自定义JDK下载路径">
-              {getFieldDecorator("BUILD_ORACLEJDK_URL", {
-                initialValue: runtimeInfo && runtimeInfo.BUILD_ORACLEJDK_URL,
-                rules: [{ validator: this.validCustomJDK }]
-              })(<Input placeholder="请提供自定义JDK的下载路径" />)}
-            </Form.Item>
-          )}
-        </div>
-      );
-    };
-    const { JDKType, languageType, arr } = this.state;
-    return (
-      <Card title="构建运行环境设置">
-        {(languageType == "java-maven" || languageType == "Java-maven") && (
-          <div>
-            <Form.Item {...formItemLayout} label="开启清除构建缓存">
-              {getFieldDecorator("NO_CACHE", {
-                initialValue: ""
-              })(
-                <Radio
-                  onClick={() => {
-                    this.handleRadio("NO_CACHE");
-                  }}
-                  checked={this.state.NO_CACHE}
-                />
-              )}
-            </Form.Item>
-            {/* JDK SETTING */}
-            {jdkShow()}
-
-            <Form.Item {...formItemLayout} label="Maven版本">
-              {getFieldDecorator("BUILD_RUNTIMES_MAVEN", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_RUNTIMES_MAVEN) || "3.3.1"
-              })(
-                <RadioGroup>
-                  <Radio value="3.3.1">3.3.1(默认)</Radio>
-                  <Radio value="3.0.5">3.0.5</Radio>
-                  <Radio value="3.1.1">3.1.1</Radio>
-                  <Radio value="3.2.5">3.2.5</Radio>
-                  <Radio value="3.3.9">3.3.9</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="web服务器支持">
-              {getFieldDecorator("BUILD_RUNTIMES_SERVER", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_RUNTIMES_SERVER) ||
-                  "tomcat85"
-              })(
-                <RadioGroup className={styles.ant_radio_disabled}>
-                  <Radio value="tomcat85">tomcat85(默认)</Radio>
-                  <Radio value="tomcat7">tomcat7</Radio>
-                  <Radio value="tomcat8">tomcat8</Radio>
-                  <Radio value="tomcat9">tomcat9</Radio>
-                  <Radio value="jetty7">jetty7</Radio>
-                  <Radio value="jetty9">jetty9</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="禁用Maven Mirror">
-              {getFieldDecorator("BUILD_MAVEN_MIRROR_DISABLE", {
-                initialValue: ""
-              })(
-                <Radio
-                  onClick={() => {
-                    this.handleRadio("BUILD_MAVEN_MIRROR_DISABLE");
-                  }}
-                  checked={this.state.BUILD_MAVEN_MIRROR_DISABLE}
-                />
-              )}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="MAVEN MIRROR OF配置">
-              {getFieldDecorator("BUILD_MAVEN_MIRROR_OF", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_MAVEN_MIRROR_OF) ||
-                  "central"
-              })(<Input placeholder="" />)}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="MAVEN MIRROR_URL">
-              {getFieldDecorator("BUILD_MAVEN_MIRROR_URL", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_MAVEN_MIRROR_URL) ||
-                  "maven.goodrain.me"
-              })(<Input placeholder="" />)}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="Maven构建参数">
-              {getFieldDecorator("BUILD_MAVEN_CUSTOM_OPTS", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_MAVEN_CUSTOM_OPTS) ||
-                  "-DskipTests"
-              })(<Input placeholder="" />)}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="Maven构建命令">
-              {getFieldDecorator("BUILD_MAVEN_CUSTOM_GOALS", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_MAVEN_CUSTOM_GOALS) ||
-                  "clean dependency:list install"
-              })(<Input placeholder="" />)}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="MAVEN构建Java参数配置">
-              {getFieldDecorator("BUILD_MAVEN_JAVA_OPTS", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_MAVEN_JAVA_OPTS) ||
-                  "-Xmx1024m"
-              })(<Input placeholder="" />)}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="启动命令">
-              {getFieldDecorator("BUILD_PROCFILE", {
-                initialValue: (runtimeInfo && runtimeInfo.BUILD_PROCFILE) || ""
-              })(
-                <Input placeholder="web: java $JAVA_OPTS -jar ./webapp-runner.jar --port $PORT ./*.war" />
-              )}
-            </Form.Item>
-          </div>
-        )}
-        {(languageType == "java-jar" || languageType == "Java-jar") && (
-          <div>
-            <Form.Item {...formItemLayout} label="开启清除构建缓存">
-              {getFieldDecorator("NO_CACHE", {
-                initialValue: ""
-              })(
-                <Radio
-                  onClick={() => {
-                    this.handleRadio("NO_CACHE");
-                  }}
-                  checked={this.state.NO_CACHE}
-                />
-              )}
-            </Form.Item>
-            {/* JDK SETTING */}
-            {jdkShow()}
-
-            <Form.Item {...formItemLayout} label="启动命令">
-              {getFieldDecorator("BUILD_PROCFILE", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_PROCFILE) ||
-                  "web: java -Dserver.port=$PORT $JAVA_OPTS -jar ./*.jar"
-              })(<Input placeholder="" />)}
-            </Form.Item>
-          </div>
-        )}
-        {(languageType == "java-war" || languageType == "Java-war") && (
-          <div>
-            <Form.Item {...formItemLayout} label="开启清除构建缓存">
-              {getFieldDecorator("NO_CACHE", {
-                initialValue: ""
-              })(
-                <Radio
-                  onClick={() => {
-                    this.handleRadio("NO_CACHE");
-                  }}
-                  checked={this.state.NO_CACHE}
-                />
-              )}
-            </Form.Item>
-
-            {/* JDK SETTING */}
-            {jdkShow()}
-
-            <Form.Item {...formItemLayout} label="web服务器支持">
-              {getFieldDecorator("BUILD_RUNTIMES_SERVER", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_RUNTIMES_SERVER) ||
-                  "tomcat85"
-              })(
-                <RadioGroup className={styles.ant_radio_disabled}>
-                  <Radio value="tomcat85">tomcat85(默认)</Radio>
-                  <Radio value="tomcat7">tomcat7</Radio>
-                  <Radio value="tomcat8">tomcat8</Radio>
-                  <Radio value="tomcat9">tomcat9</Radio>
-                  <Radio value="jetty7">jetty7</Radio>
-                  <Radio value="jetty9">jetty9</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-            <Form.Item {...formItemLayout} label="启动命令">
-              {getFieldDecorator("BUILD_PROCFILE", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_PROCFILE) ||
-                  "web: java $JAVA_OPTS -jar ./webapp-runner.jar --port $PORT ./*.war"
-              })(<Input placeholder="" />)}
-            </Form.Item>
-          </div>
-        )}
-
-        {(languageType == "Golang" ||
-          languageType == "go" ||
-          languageType == "golang") && (
-          <Form.Item {...formItemLayout} label="Golang版本">
-            {getFieldDecorator("BUILD_RUNTIMES", {
-              initialValue:
-                (runtimeInfo && runtimeInfo.BUILD_RUNTIMES) || "go1.11.2"
-            })(
-              <RadioGroup className={styles.ant_radio_disabled}>
-                <Radio value="go1.11.2" selected="selected">
-                  go1.11.2(默认)
-                </Radio>
-                <Radio value="go1.9.7">go1.9.7</Radio>
-                <Radio value="go1.8.7">go1.8.7</Radio>
-                <Radio value="go1.11">go1.11</Radio>
-                <Radio value="go1.11.1">go1.11.1</Radio>
-                <Radio value="go1.10.5">go1.10.5</Radio>
-                <Radio value="go1.10.4">go1.10.4</Radio>
-              </RadioGroup>
-            )}
-          </Form.Item>
-        )}
-        {(languageType == "Gradle" ||
-          languageType == "gradle" ||
-          languageType == "java-gradle" ||
-          languageType == "Java-gradle" ||
-          languageType == "JAVAGradle") && (
-          <div>
-            {/* JDK SETTING */}
-            {jdkShow()}
-          </div>
-        )}
-        {(languageType == "python" || languageType == "Python") && (
-          <div>
-            <Form.Item {...formItemLayout} label="Python支持">
-              {getFieldDecorator("BUILD_RUNTIMES", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_RUNTIMES) || "python-3.6.6"
-              })(
-                <RadioGroup className={styles.ant_radio_disabled}>
-                  <Radio value="python-3.6.6" selected="selected">
-                    python-3.6.6
-                  </Radio>
-                  <Radio value="python-3.6.1">python-3.6.1</Radio>
-                  <Radio value="python-3.6.2">python-3.6.2</Radio>
-                  <Radio value="python-3.6.3">python-3.6.3</Radio>
-                  <Radio value="python-3.6.4">python-3.6.4</Radio>
-                  <Radio value="python-3.6.5">python-3.6.5</Radio>
-                  <Radio value="python-2.7.9">python-2.7.9</Radio>
-                  <Radio value="python-2.7.10">python-2.7.10</Radio>
-                  <Radio value="python-2.7.13">python-2.7.13</Radio>
-                  <Radio value="python-2.7.14 ">python-2.7.14</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-            <Form.Item {...formItemLayout} label="Pypi源">
-              {getFieldDecorator("BUILD_PIP_INDEX_URL", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_PIP_INDEX_URL) ||
-                  "https://pypi.tuna.tsinghua.edu.cn/simple"
-              })(<Input />)}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="开启清除构建缓存">
-              {getFieldDecorator("NO_CACHE", {
-                initialValue: ""
-              })(
-                <Radio
-                  onClick={() => {
-                    this.handleRadio("NO_CACHE");
-                  }}
-                  checked={this.state.NO_CACHE}
-                />
-              )}
-            </Form.Item>
-          </div>
-        )}
-        {(languageType == "php" || languageType == "PHP") && (
-          <div>
-            <Form.Item {...formItemLayout} label="web服务器支持">
-              {getFieldDecorator("BUILD_RUNTIMES_SERVER", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_RUNTIMES_SERVER) || "apache"
-              })(
-                <RadioGroup className={styles.ant_radio_disabled}>
-                  <Radio value="apache">apache(默认)</Radio>
-                  <Radio value="nginx">nginx</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="PHP版本">
-              {getFieldDecorator("BUILD_RUNTIMES", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_RUNTIMES) || "5.6.35"
-              })(
-                <RadioGroup className={styles.ant_radio_disabled}>
-                  <Radio value="5.6.35" selected="selected">
-                    5.6.35(默认)
-                  </Radio>
-                  <Radio value="5.5.38">5.5.38</Radio>
-                  <Radio value="7.0.29">7.0.29</Radio>
-                  <Radio value="7.1.16">7.1.16</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-            {/* <Form.Item {...formItemLayout} label="HHVM版本">
-                      {getFieldDecorator('BUILD_RUNTIMES_HHVM', {
-                          initialValue: runtimeInfo && runtimeInfo.BUILD_RUNTIMES_HHVM || "3.5.1",
-                      })(
-                          <RadioGroup className={styles.ant_radio_disabled}>
-                              <Radio value="3.5.1" selected="selected">3.5.1(默认)</Radio>
-                          </RadioGroup>
-                      )}
-                  </Form.Item> */}
-            <Form.Item {...formItemLayout} label="开启清除构建缓存">
-              {getFieldDecorator("NO_CACHE", {
-                initialValue: ""
-              })(
-                <Radio
-                  onClick={() => {
-                    this.handleRadio("NO_CACHE");
-                  }}
-                  checked={this.state.NO_CACHE}
-                />
-              )}
-            </Form.Item>
-          </div>
-        )}
-        {(languageType == "nodejsstatic" || languageType == "static") && (
-          <Form.Item {...formItemLayout} label="web服务器支持">
-            {getFieldDecorator("BUILD_RUNTIMES_SERVER", {
-              initialValue:
-                (runtimeInfo && runtimeInfo.BUILD_RUNTIMES_SERVER) || "nginx"
-            })(
-              <RadioGroup className={styles.ant_radio_disabled}>
-                <Radio value="nginx" selected="selected">
-                  nginx(默认)
-                </Radio>
-                {languageType == "static" && (
-                  <Radio value="apache">apache</Radio>
-                )}
-              </RadioGroup>
-            )}
-          </Form.Item>
-        )}
-        {(languageType == "nodejs" ||
-          languageType == "Node" ||
-          languageType == "node") && (
-          <div>
-            <Form.Item {...formItemLayout} label="Node版本">
-              {getFieldDecorator("BUILD_RUNTIMES", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_RUNTIMES) || "8.12.0"
-              })(
-                <RadioGroup className={styles.ant_radio_disabled}>
-                  <Radio value="8.12.0" selected="selected">
-                    8.12.0(默认)
-                  </Radio>
-                  <Radio value="4.9.1">4.9.1</Radio>
-                  <Radio value="5.12.0">5.12.0</Radio>
-                  <Radio value="6.14.4">6.14.4</Radio>
-                  <Radio value="7.10.1">7.10.1</Radio>
-                  <Radio value="9.11.2">9.11.2</Radio>
-                  <Radio value="10.13.0">10.13.0</Radio>
-                  <Radio value="11.1.0">11.1.0</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-
-            <Form.Item {...formItemLayout} label="开启清除构建缓存">
-              {getFieldDecorator("NO_CACHE", {
-                initialValue: ""
-              })(
-                <Radio
-                  onClick={() => {
-                    this.handleRadio("NO_CACHE");
-                  }}
-                  checked={this.state.NO_CACHE}
-                />
-              )}
-            </Form.Item>
-
-            {/* <Form.Item {...formItemLayout} label="web服务器支持">
-                          {getFieldDecorator('BUILD_RUNTIMES_SERVER', {
-                              initialValue: runtimeInfo && runtimeInfo.BUILD_RUNTIMES_SERVER || "nginx",
-                          })(
-                              <RadioGroup className={styles.ant_radio_disabled}>
-                                  <Radio value='nginx'>nginx(默认)</Radio>
-                                  <Radio value='apache'>apache</Radio>
-                              </RadioGroup>
-                          )}
-                      </Form.Item> */}
-          </div>
-        )}
-
-        {(languageType == "NetCore" ||
-          languageType == "netCore" ||
-          languageType == "netcore") && (
-          <div>
-            <Form.Item {...formItemLayout} label="编译环境版本">
-              {getFieldDecorator("BUILD_DOTNET_SDK_VERSION", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_DOTNET_SDK_VERSION) ||
-                  "2.2-sdk-alpine"
-              })(
-                <RadioGroup className={styles.ant_radio_disabled}>
-                  <Radio value="2.2-sdk-alpine" selected="selected">
-                    2.2-sdk-alpine(默认)
-                  </Radio>
-                  <Radio value="2.1-sdk-alpine">2.1-sdk-alpine</Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-            <Form.Item {...formItemLayout} label="运行环境版本">
-              {getFieldDecorator("BUILD_DOTNET_RUNTIME_VERSION", {
-                initialValue:
-                  (runtimeInfo && runtimeInfo.BUILD_DOTNET_RUNTIME_VERSION) ||
-                  "2.2-aspnetcore-runtime"
-              })(
-                <RadioGroup className={styles.ant_radio_disabled}>
-                  <Radio value="2.2-aspnetcore-runtime" selected="selected">
-                    2.2-aspnetcore-runtime(默认)
-                  </Radio>
-                  <Radio value="2.1-aspnetcore-runtime">
-                    2.1-aspnetcore-runtime
-                  </Radio>
-                </RadioGroup>
-              )}
-            </Form.Item>
-          </div>
-        )}
-
-        {languageType == "dockerfile" && (
-          <div>
-            <Form.Item {...formItemLayout} label="ARG参数">
-              {getFieldDecorator("set_dockerfile", { initialValue: [] })(
-                <Dockerinput
-                  onChange={value => {
-                    this.onSetObj(value);
-                  }}
-                  editInfo={arr}
-                />
-              )}
-            </Form.Item>
-          </div>
-        )}
-
-        <Row>
-          <Col span="5" />
-          <Col span="19">
-            <Button onClick={this.showConfirm} type={"primary"}>
-              确认修改
-            </Button>
-          </Col>
-        </Row>
-      </Card>
-    );
-  }
-}
-
-//php
-@connect(
-  ({ user, appControl, teamControl }) => ({
-    currUser: user.currentUser,
-    appDetail: appControl.appDetail
-  }),
-  null,
-  null,
-  { withRef: true }
-)
-@Form.create()
-class PHP extends PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      enablePlugs: [
-        {
-          name: "Bzip2",
-          version: "1.0.6, 6-Sept-2010",
-          url: "http://docs.php.net/bzip2"
-        },
-        {
-          name: "cURL",
-          version: "7.35.0",
-          url: "http://docs.php.net/curl"
-        },
-        {
-          name: "FPM",
-          version: "",
-          url: "http://docs.php.net/fpm"
-        },
-        {
-          name: "mcrypt",
-          version: "2.5.8",
-          url: "http://docs.php.net/mcrypt"
-        },
-        {
-          name: "MySQL(PDO)",
-          version: "mysqlnd 5.0.11-dev - 20120503",
-          url: "http://docs.php.net/pdo_mysql"
-        },
-        {
-          name: "MySQLi",
-          version: "mysqlnd 5.0.11-dev - 20120503",
-          url: "http://docs.php.net/mysqli"
-        },
-        {
-          name: "OPcache",
-          version: "Mosa",
-          url: "http://docs.php.net/opcache"
-        },
-        {
-          name: "OpenSSL",
-          version: "Mosa",
-          url: "http://docs.php.net/pgsql"
-        },
-        {
-          name: "PostgreSQL(PDO)",
-          version: "9.3.6",
-          url: "http://docs.php.net/pdo_pgsql"
-        },
-        {
-          name: "Readline",
-          version: "6.3",
-          url: "http://docs.php.net/readline"
-        },
-        {
-          name: "Sockets",
-          version: "",
-          url: "http://docs.php.net/sockets"
-        },
-        {
-          name: "Zip",
-          version: "1.12.5",
-          url: "http://docs.php.net/zip"
-        },
-        {
-          name: "Zlib",
-          version: "1.2.8",
-          url: "http://docs.php.net/zlib"
-        }
-      ],
-      unablePlugs: [],
-      //扩展
-      dependencies: [],
-      selected_dependency: this.props.selected_dependency || [],
-      service_dependency: (this.props.selected_dependency || []).join(","),
-      versions: [],
-      default_version: ""
-    };
-  }
-  componentDidMount() {
-    this.getPhpConfig();
-    const runtimeInfo = this.props.runtimeInfo || {};
-    if (runtimeInfo.runtimes === false) {
-      this.onChange({
-        service_runtimes: this.getDefaultRuntime()
-      });
-    }
-
-    if (runtimeInfo.procfile === false) {
-      this.onChange({
-        service_runtimes: this.getDefaultService()
-      });
-    }
-  }
-  getPhpConfig = () => {
-    this.props.dispatch({
-      type: "appControl/getPhpConfig",
-      callback: data => {
-        if (data) {
-          this.setState({
-            versions: data.bean.versions,
-            default_version: data.bean.default_version,
-            unablePlugs: data.bean.extends
-          });
-        }
-      }
-    });
-  };
-  onChange = value => {
-    this.props.dispatch({ type: "createApp/saveRuntimeInfo", payload: value });
-  };
-  getDefaultRuntime = () => {
-    return "-1";
-  };
-  getDefaultService = () => {
-    return "-1";
-  };
-  handleSubmit = e => {
-    const form = this.props.form;
-    form.validateFields((err, fieldsValue) => {
-      if (err) return;
-      this.props.onSubmit &&
-        this.props.onSubmit({
-          ...fieldsValue,
-          service_dependency: this.state.service_dependency
-        });
-    });
-  };
-  render() {
-    const radioStyle = {
-      display: "block",
-      height: "30px",
-      lineHeight: "30px"
-    };
-
-    const rowSelection = {
-      selectedRowKeys: this.state.selected_dependency,
-      onChange: (selectedRowKeys, selectedRows) => {
-        this.setState({
-          service_dependency: selectedRowKeys.join(","),
-          selected_dependency: selectedRowKeys
-        });
-      }
-    };
-
-    const { getFieldDecorator, getFieldValue } = this.props.form;
-
-    const runtimeInfo = this.props.runtimeInfo || {};
-    const userRunTimeInfo = this.props.userRunTimeInfo;
-    const formItemLayout = {
-      labelCol: {
-        xs: {
-          span: 24
-        },
-        sm: {
-          span: 3
-        }
-      },
-      wrapperCol: {
-        xs: {
-          span: 24
-        },
-        sm: {
-          span: 21
-        }
-      }
-    };
-
-    // if (runtimeInfo.runtimes && runtimeInfo.procfile && runtimeInfo.dependencies) {
-    //   return null;
-    // }
-
-    if (!this.state.versions.length) return null;
-
-    return (
-      <Fragment>
-        <Card
-          title="PHP版本支持"
-          style={{
-            marginBottom: 16
-          }}
-        >
-          {/* {!runtimeInfo.runtimes */}
-          <Form.Item {...formItemLayout} label="版本">
-            {getFieldDecorator("service_runtimes", {
-              initialValue:
-                userRunTimeInfo.runtimes || this.state.default_version,
-              rules: [
-                {
-                  required: true,
-                  message: "请选择应用类型"
-                }
-              ]
-            })(
-              <RadioGroup disabled className={styles.ant_radio_disabled}>
-                {this.state.versions.map(item => {
-                  return <Radio value={item}>{item}</Radio>;
-                })}
-              </RadioGroup>
-            )}
-          </Form.Item>
-          {/* : null
-          } */}
-
-          {/* {!runtimeInfo.procfile */}
-          <Form.Item {...formItemLayout} label="web服务器">
-            {getFieldDecorator("service_server", {
-              initialValue: userRunTimeInfo.procfile,
-              rules: [
-                {
-                  required: true,
-                  message: "请选择"
-                }
-              ]
-            })(
-              <RadioGroup disabled className={styles.ant_radio_disabled}>
-                <Radio value="apache">apache</Radio>
-                <Radio value="nginx">nginx</Radio>
-              </RadioGroup>
-            )}
-          </Form.Item>
-          {/* //   : null
-          // } */}
-
-          {/* {!runtimeInfo.dependencies */}
-          <Form.Item {...formItemLayout} label="PHP扩展">
-            <Tabs defaultActiveKey="1">
-              <TabPane tab="已启用扩展" key="1">
-                <Table
-                  columns={[
-                    {
-                      title: "名称",
-                      dataIndex: "name",
-                      render: (v, data) => {
-                        return (
-                          <a target="_blank" href={data.url}>
-                            {v}
-                          </a>
-                        );
-                      }
-                    },
-                    {
-                      title: "版本",
-                      dataIndex: "version"
-                    }
-                  ]}
-                  pagination={false}
-                  dataSource={this.state.enablePlugs}
-                />
-              </TabPane>
-              <TabPane tab="未启用扩展" key="2">
-                <Table
-                  rowKey="value"
-                  columns={[
-                    {
-                      title: "名称",
-                      dataIndex: "name",
-                      render: (v, data) => {
-                        return (
-                          <a target="_blank" href={data.url}>
-                            {v}
-                          </a>
-                        );
-                      }
-                    },
-                    {
-                      title: "版本",
-                      dataIndex: "version"
-                    },
-                    {
-                      title: "操作",
-                      dataIndex: "action"
-                    }
-                  ]}
-                  rowSelection={rowSelection}
-                  pagination={false}
-                  dataSource={this.state.unablePlugs}
-                />
-              </TabPane>
-            </Tabs>
-          </Form.Item>
-          {/* : null
-          } */}
-
-          {/* <Row>
-            <Col span="5"></Col>
-            <Col span="19">
-              <Button onClick={this.handleSubmit} type={'primary'}>确认修改</Button>
-            </Col>
-          </Row> */}
-        </Card>
-      </Fragment>
-    );
-  }
-}
-
-@connect(
-  ({ user, appControl, teamControl }) => ({ currUser: user.currentUser }),
-  null,
-  null,
-  { withRef: true }
-)
+@connect(null, null, null, { withRef: true })
 @Form.create()
 class BaseInfo extends PureComponent {
   constructor(props) {
@@ -1426,57 +49,63 @@ class BaseInfo extends PureComponent {
     this.state = {
       memoryList: [
         {
-          text: "64M",
+          text: '64M',
           value: 64
         },
         {
-          text: "128M",
+          text: '128M',
           value: 128
         },
         {
-          text: "256M",
+          text: '256M',
           value: 256
         },
         {
-          text: "512M",
+          text: '512M',
           value: 512
         },
         {
-          text: "1G",
+          text: '1G',
           value: 1024
         },
         {
-          text: "2G",
+          text: '2G',
           value: 1024 * 2
         },
         {
-          text: "4G",
+          text: '4G',
           value: 1024 * 4
         },
         {
-          text: "8G",
+          text: '8G',
           value: 1024 * 8
         },
         {
-          text: "16G",
+          text: '16G',
           value: 1024 * 16
         }
       ]
     };
   }
-  handleSubmit = e => {
-    const form = this.props.form;
+  handleSubmit = () => {
+    const { form, onSubmit } = this.props;
     form.validateFields((err, fieldsValue) => {
-      if (err) return;
-      this.props.onSubmit && this.props.onSubmit(fieldsValue);
+      if (!err && onSubmit) {
+        onSubmit(fieldsValue);
+      }
     });
   };
   render() {
-    const { getFieldDecorator, getFieldValue } = this.props.form;
+    const { appDetail, form } = this.props;
+    const { getFieldDecorator } = form;
+    const { extend_method } = appDetail.service;
+    const minMemory = appDetail.service.min_memory;
+    const list = this.state.memoryList;
+
     const radioStyle = {
-      display: "block",
-      height: "30px",
-      lineHeight: "30px"
+      display: 'block',
+      height: '30px',
+      lineHeight: '30px'
     };
     const formItemLayout = {
       labelCol: {
@@ -1496,9 +125,6 @@ class BaseInfo extends PureComponent {
         }
       }
     };
-    const extend_method = this.props.appDetail.service.extend_method;
-    const minMemory = this.props.appDetail.service.min_memory;
-    const list = this.state.memoryList;
     return (
       <Card
         title="基本信息"
@@ -1507,32 +133,33 @@ class BaseInfo extends PureComponent {
         }}
       >
         <Form.Item {...formItemLayout} label="组件类型">
-          {getFieldDecorator("extend_method", {
-            initialValue: extend_method || "stateless",
+          {getFieldDecorator('extend_method', {
+            initialValue: extend_method || 'stateless_multiple',
             rules: [
               {
                 required: true,
-                message: "请选择组件类型"
+                message: '请选择组件类型'
               }
             ]
           })(
             <RadioGroup>
-              <Radio style={radioStyle} value="stateless">
-                无状态组件（包括Web类，API类）
-              </Radio>
-              <Radio style={radioStyle} value={"state"}>
-                有状态组件（包括DB类，集群类，消息中间件类，数据类）
-              </Radio>
+              {globalUtil.getSupportComponentTyps().map(item => {
+                return (
+                  <Radio key={item.type} style={radioStyle} value={item.type}>
+                    {item.name}({item.desc}）
+                  </Radio>
+                );
+              })}
             </RadioGroup>
           )}
         </Form.Item>
         <Form.Item {...formItemLayout} label="内存">
-          {getFieldDecorator("min_memory", {
-            initialValue: minMemory || "",
+          {getFieldDecorator('min_memory', {
+            initialValue: minMemory || '',
             rules: [
               {
                 required: true,
-                message: "请选择内存"
+                message: '请选择内存'
               }
             ]
           })(
@@ -1553,7 +180,7 @@ class BaseInfo extends PureComponent {
         <Row>
           <Col span="5" />
           <Col span="19">
-            <Button onClick={this.handleSubmit} type={"primary"}>
+            <Button onClick={this.handleSubmit} type="primary">
               确认修改
             </Button>
           </Col>
@@ -1562,82 +189,22 @@ class BaseInfo extends PureComponent {
     );
   }
 }
-
-@connect(
-  ({ user, appControl, teamControl }) => ({ currUser: user.currentUser }),
-  null,
-  null,
-  { withRef: true }
-)
+// eslint-disable-next-line react/no-multi-comp
+@connect(null, null, null, { withRef: true })
 class RenderDeploy extends PureComponent {
   constructor(arg) {
     super(arg);
     this.state = {
-      runtimeInfo: ""
+      runtimeInfo: ''
     };
   }
   componentDidMount() {
     this.getRuntimeInfo();
   }
-  handleEditRuntime = (build_env_dict = {}) => {
-    // this
-    //     .props
-    //     .dispatch({
-    //         type: 'appControl/editRuntimeInfo',
-    //         payload: {
-    //             team_name: globalUtil.getCurrTeamName(),
-    //             app_alias: this.props.appDetail.service.service_alias,
-    //             ...val
-    //         },
-    //         callback: (data) => { }
-    //     })
 
-    this.props.dispatch({
-      type: "appControl/editRuntimeBuildInfo",
-      payload: {
-        team_name: globalUtil.getCurrTeamName(),
-        app_alias: this.props.appDetail.service.service_alias,
-        build_env_dict
-      },
-      callback: res => {
-        if (res && res._code == 200) {
-          notification.success({ message: "修改成功." });
-          this.getRuntimeInfo();
-        }
-      }
-    });
-  };
-  handleEditInfo = (val = {}) => {
-    this.props.dispatch({
-      type: "appControl/editAppCreateInfo",
-      payload: {
-        team_name: globalUtil.getCurrTeamName(),
-        app_alias: this.props.appDetail.service.service_alias,
-        ...val
-      },
-      callback: data => {
-        if (data) {
-          this.props.updateDetail();
-        }
-      }
-    });
-  };
   getRuntimeInfo = () => {
-    // this
-    //     .props
-    //     .dispatch({
-    //         type: 'appControl/getRuntimeInfo',
-    //         payload: {
-    //             team_name: globalUtil.getCurrTeamName(),
-    //             app_alias: this.props.appDetail.service.service_alias
-    //         },
-    //         callback: (data) => {
-    //             this.setState({ runtimeInfo: data.bean })
-    //         }
-    //     })
-
     this.props.dispatch({
-      type: "appControl/getRuntimeBuildInfo",
+      type: 'appControl/getRuntimeBuildInfo',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias
@@ -1649,89 +216,74 @@ class RenderDeploy extends PureComponent {
       }
     });
   };
+  handleEditRuntime = (build_env_dict = {}) => {
+    this.props.dispatch({
+      type: 'appControl/editRuntimeBuildInfo',
+      payload: {
+        team_name: globalUtil.getCurrTeamName(),
+        app_alias: this.props.appDetail.service.service_alias,
+        build_env_dict
+      },
+      callback: res => {
+        if (res && res.status_code === 200) {
+          notification.success({ message: '修改成功' });
+          this.getRuntimeInfo();
+        }
+      }
+    });
+  };
+  handleEditInfo = (val = {}) => {
+    this.props.dispatch({
+      type: 'appControl/editAppCreateInfo',
+      payload: {
+        team_name: globalUtil.getCurrTeamName(),
+        app_alias: this.props.appDetail.service.service_alias,
+        ...val
+      },
+      callback: data => {
+        if (data) {
+          this.props.updateDetail();
+          notification.success({ message: '更新成功' });
+        }
+      }
+    });
+  };
   render() {
-    const language = appUtil.getLanguage(this.props.appDetail);
-    const runtimeInfo = this.state.runtimeInfo;
-    const visible = this.props.visible;
-    if (!this.state.runtimeInfo) return null;
-    const appDetail = this.props.appDetail;
+    const {
+      visible,
+      appDetail,
+      componentPermissions: { isDeploytype, isSource }
+    } = this.props;
+    const { runtimeInfo } = this.state;
+    if (!runtimeInfo) return null;
+    const language = appUtil.getLanguage(appDetail);
+
     return (
       <div
         style={{
-          display: visible ? "block" : "none"
+          display: visible ? 'block' : 'none'
         }}
       >
-        <BaseInfo appDetail={appDetail} onSubmit={this.handleEditInfo} />
+        {!isDeploytype && !isSource && <NoPermTip />}
+        {isDeploytype && (
+          <BaseInfo appDetail={appDetail} onSubmit={this.handleEditInfo} />
+        )}
 
-        {language && runtimeInfo && (
-          <JAVA
+        {language && runtimeInfo && isSource && (
+          <CodeBuildConfig
             appDetail={this.props.appDetail}
             onSubmit={this.handleEditRuntime}
             language={language}
-            // userRunTimeInfo={runtimeInfo.user_dependency || {}}
             runtimeInfo={this.state.runtimeInfo}
           />
         )}
-        {/* {(language === 'php')
-          ? <PHP
-            appDetail={this.props.appDetail}
-            onSubmit={this.handleEditRuntime}
-            runtimeInfo={runtimeInfo.check_dependency || {}}
-            userRunTimeInfo={runtimeInfo.user_dependency || {}}
-            selected_dependency={runtimeInfo.selected_dependency || []}
-          />
-          : null
-        }
-
-        {appUtil.isJava(this.props.appDetail)
-          ? <JAVA
-            appDetail={this.props.appDetail}
-            onSubmit={(val) => { this.handleEditRuntime(val) }}
-            language={language}
-            userRunTimeInfo={runtimeInfo.user_dependency || {}}
-            runtimeInfo={runtimeInfo.check_dependency || {}} />
-          : null
-        }
-
-        {(language === 'python')
-          ? <Python
-            appDetail={this.props.appDetail}
-            onSubmit={this.handleEditRuntime}
-            userRunTimeInfo={runtimeInfo.user_dependency || {}}
-            runtimeInfo={runtimeInfo.check_dependency || {}} />
-          : null
-        }
-
-        {(language === 'go')
-          ? <Golang
-            appDetail={this.props.appDetail}
-            onSubmit={this.handleEditRuntime}
-            userRunTimeInfo={runtimeInfo.user_dependency || {}}
-            runtimeInfo={runtimeInfo.check_dependency || {}}
-          />
-          : null
-        }
-
-        {(language === 'nodejs')
-          ? <Nodejs
-            appDetail={this.props.appDetail}
-            onSubmit={this.handleEditRuntime}
-            userRunTimeInfo={runtimeInfo.user_dependency || {}}
-            runtimeInfo={runtimeInfo.check_dependency || {}} />
-          : null
-        } */}
       </div>
     );
   }
 }
-
-//存储管理
-@connect(
-  ({ user, appControl }) => ({ currUser: user.currentUser }),
-  null,
-  null,
-  { withRef: true }
-)
+// 存储管理
+// eslint-disable-next-line react/no-multi-comp
+@connect(null, null, null, { withRef: true })
 class Mnt extends PureComponent {
   constructor(arg) {
     super(arg);
@@ -1742,18 +294,36 @@ class Mnt extends PureComponent {
       mntList: [],
       toDeleteMnt: null,
       toDeleteVolume: null,
-      volumes: []
+      volumes: [],
+      volumeOpts: []
     };
   }
 
   componentDidMount() {
-    const { dispatch } = this.props;
+    this.fetchVolumeOpts();
     this.loadMntList();
     this.fetchVolumes();
   }
   fetchVolumes = () => {
     this.props.dispatch({
-      type: "appControl/fetchVolumes",
+      type: 'appControl/fetchVolumes',
+      payload: {
+        team_name: globalUtil.getCurrTeamName(),
+        app_alias: this.props.appDetail.service.service_alias,
+        is_config: false
+      },
+      callback: data => {
+        if (data) {
+          this.setState({
+            volumes: data.list || []
+          });
+        }
+      }
+    });
+  };
+  fetchVolumeOpts = () => {
+    this.props.dispatch({
+      type: 'appControl/fetchVolumeOpts',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias
@@ -1761,7 +331,7 @@ class Mnt extends PureComponent {
       callback: data => {
         if (data) {
           this.setState({
-            volumes: data.list || []
+            volumeOpts: data.list || []
           });
         }
       }
@@ -1793,7 +363,7 @@ class Mnt extends PureComponent {
   };
   handleSubmitAddVar = vals => {
     this.props.dispatch({
-      type: "appControl/addVolume",
+      type: 'appControl/addVolume',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
@@ -1834,7 +404,7 @@ class Mnt extends PureComponent {
   };
   handleDeleteVolume = () => {
     this.props.dispatch({
-      type: "appControl/deleteVolume",
+      type: 'appControl/deleteVolume',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
@@ -1848,7 +418,7 @@ class Mnt extends PureComponent {
   };
   handleDeleteMnt = () => {
     this.props.dispatch({
-      type: "appControl/deleteMnt",
+      type: 'appControl/deleteMnt',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
@@ -1863,25 +433,52 @@ class Mnt extends PureComponent {
   cancelDeleteMnt = () => {
     this.setState({ toDeleteMnt: null });
   };
+  getVolumeTypeShowName = volume_type => {
+    const { volumeOpts } = this.state;
+    return getVolumeTypeShowName(volumeOpts, volume_type);
+  };
   render() {
     const { mntList } = this.state;
     const { volumes } = this.state;
     const columns = [
       {
-        title: "存储名称",
-        dataIndex: "volume_name"
+        title: '存储名称',
+        dataIndex: 'volume_name'
       },
       {
-        title: "挂载路径",
-        dataIndex: "volume_path"
+        title: '挂载路径',
+        dataIndex: 'volume_path'
       },
       {
-        title: "存储类型",
-        dataIndex: "volume_type"
+        title: '存储类型',
+        dataIndex: 'volume_type',
+        render: (text, record) => {
+          return <span>{this.getVolumeTypeShowName(text)}</span>;
+        }
       },
       {
-        title: "操作",
-        dataIndex: "action",
+        title: '存储容量',
+        dataIndex: 'volume_capacity',
+        render: (text, record) => {
+          if (text == 0) {
+            return <span>不限制</span>;
+          }
+          return <span>{text}GB</span>;
+        }
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        render: (text, record) => {
+          if (text == 'not_bound') {
+            return <span style={{ color: 'red' }}>未挂载</span>;
+          }
+          return <span style={{ color: 'green' }}>已挂载</span>;
+        }
+      },
+      {
+        title: '操作',
+        dataIndex: 'action',
         render: (val, data) => {
           return (
             <a
@@ -1902,41 +499,48 @@ class Mnt extends PureComponent {
           style={{
             marginBottom: 16
           }}
-          title={"存储设置"}
+          title="存储设置"
+          extra={
+            <Button onClick={this.handleAddVar}>
+              <Icon type="plus" />
+              添加存储
+            </Button>
+          }
         >
           <Table pagination={false} dataSource={volumes} columns={columns} />
           <div
             style={{
               marginTop: 10,
-              textAlign: "right"
+              textAlign: 'right'
             }}
-          >
-            <Button onClick={this.handleAddVar}>
-              <Icon type="plus" />
-              添加存储
-            </Button>
-          </div>
+          />
         </Card>
         <Card
           style={{
             marginBottom: 16
           }}
-          title={"共享存储"}
+          title="共享存储"
+          extra={
+            <Button onClick={this.showAddRelation}>
+              <Icon type="plus" />
+              挂载共享存储
+            </Button>
+          }
         >
           <Table
             pagination={false}
             columns={[
               {
-                title: "本地挂载路径",
-                dataIndex: "local_vol_path",
-                key: "1",
-                width: "20%",
+                title: '本地挂载路径',
+                dataIndex: 'local_vol_path',
+                key: '1',
+                width: '20%',
                 render: (data, index) => (
                   <Tooltip title={data}>
                     <span
                       style={{
-                        wordBreak: "break-all",
-                        wordWrap: "break-word"
+                        wordBreak: 'break-all',
+                        wordWrap: 'break-word'
                       }}
                     >
                       {data}
@@ -1945,16 +549,16 @@ class Mnt extends PureComponent {
                 )
               },
               {
-                title: "目标存储名称",
-                dataIndex: "dep_vol_name",
-                key: "2",
-                width: "15%",
+                title: '目标存储名称',
+                dataIndex: 'dep_vol_name',
+                key: '2',
+                width: '15%',
                 render: (data, index) => (
                   <Tooltip title={data}>
                     <span
                       style={{
-                        wordBreak: "break-all",
-                        wordWrap: "break-word"
+                        wordBreak: 'break-all',
+                        wordWrap: 'break-word'
                       }}
                     >
                       {data}
@@ -1963,16 +567,16 @@ class Mnt extends PureComponent {
                 )
               },
               {
-                title: "目标挂载路径",
-                dataIndex: "dep_vol_path",
-                key: "3",
-                width: "15%",
+                title: '目标挂载路径',
+                dataIndex: 'dep_vol_path',
+                key: '3',
+                width: '15%',
                 render: (data, index) => (
                   <Tooltip title={data}>
                     <span
                       style={{
-                        wordBreak: "break-all",
-                        wordWrap: "break-word"
+                        wordBreak: 'break-all',
+                        wordWrap: 'break-word'
                       }}
                     >
                       {data}
@@ -1981,23 +585,23 @@ class Mnt extends PureComponent {
                 )
               },
               {
-                title: "目标存储类型",
-                dataIndex: "dep_vol_type",
-                key: "4",
-                width: "10%",
+                title: '目标存储类型',
+                dataIndex: 'dep_vol_type',
+                key: '4',
+                width: '10%',
                 render: (text, record) => {
-                  return <span>{volumeTypeObj[text]}</span>;
+                  return <span>{this.getVolumeTypeShowName(text)}</span>;
                 }
               },
               {
-                title: "目标所属组件",
-                dataIndex: "dep_app_name",
-                key: "5",
-                width: "10%",
+                title: '目标所属组件',
+                dataIndex: 'dep_app_name',
+                key: '5',
+                width: '10%',
                 render: (v, data) => {
                   return (
                     <Link
-                      to={`/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/app/${
+                      to={`/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/components/${
                         data.dep_app_alias
                       }/overview`}
                     >
@@ -2007,14 +611,14 @@ class Mnt extends PureComponent {
                 }
               },
               {
-                title: "目标组件所属应用",
-                dataIndex: "dep_app_group",
-                key: "6",
-                width: "15%",
+                title: '目标组件所属应用',
+                dataIndex: 'dep_app_group',
+                key: '6',
+                width: '15%',
                 render: (v, data) => {
                   return (
                     <Link
-                      to={`/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/groups/${
+                      to={`/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/apps/${
                         data.dep_group_id
                       }`}
                     >
@@ -2024,10 +628,10 @@ class Mnt extends PureComponent {
                 }
               },
               {
-                title: "操作",
-                dataIndex: "action",
-                key: "7",
-                width: "15%",
+                title: '操作',
+                dataIndex: 'action',
+                key: '7',
+                width: '15%',
                 render: (val, data) => {
                   return (
                     <a
@@ -2044,21 +648,10 @@ class Mnt extends PureComponent {
             ]}
             dataSource={mntList}
           />
-          <div
-            style={{
-              marginTop: 10,
-              textAlign: "right"
-            }}
-          >
-            <Button onClick={this.showAddRelation}>
-              <Icon type="plus" />
-              挂载共享存储
-            </Button>
-          </div>
         </Card>
         {this.state.showAddVar && (
           <AddOrEditVolume
-            appBaseInfo={this.props.appDetail.service}
+            volumeOpts={this.state.volumeOpts}
             onCancel={this.handleCancelAddVar}
             onSubmit={this.handleSubmitAddVar}
             data={this.state.showAddVar}
@@ -2091,13 +684,8 @@ class Mnt extends PureComponent {
     );
   }
 }
-
-@connect(
-  ({ user, appControl, teamControl }) => ({}),
-  null,
-  null,
-  { withRef: true }
-)
+// eslint-disable-next-line react/no-multi-comp
+@connect(null, null, null, { withRef: true })
 class Relation extends PureComponent {
   constructor(arg) {
     super(arg);
@@ -2136,7 +724,7 @@ class Relation extends PureComponent {
       dep_service_ids: ids
     }).then(data => {
       if (data) {
-        notification.info({ message: "需要更新才能生效" });
+        notification.info({ message: '需要更新才能生效' });
         this.loadRelationedApp();
         this.handleCancelAddRelation();
       }
@@ -2162,17 +750,17 @@ class Relation extends PureComponent {
   render() {
     const { linkList, relationList } = this.state;
     return (
-      <Card title={"组件依赖"}>
+      <Card title="组件依赖">
         <Table
           pagination={false}
           columns={[
             {
-              title: "组件名称",
-              dataIndex: "service_cname",
+              title: '组件名称',
+              dataIndex: 'service_cname',
               render: (val, data) => {
                 return (
                   <Link
-                    to={`/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/app/${
+                    to={`/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/components/${
                       data.service_alias
                     }/overview`}
                   >
@@ -2182,12 +770,12 @@ class Relation extends PureComponent {
               }
             },
             {
-              title: "所属组",
-              dataIndex: "group_name"
+              title: '所属组',
+              dataIndex: 'group_name'
             },
             {
-              title: "操作",
-              dataIndex: "var",
+              title: '操作',
+              dataIndex: 'var',
               render: (val, data) => {
                 return (
                   <Fragment>
@@ -2218,7 +806,7 @@ class Relation extends PureComponent {
         <div
           style={{
             marginTop: 10,
-            textAlign: "right"
+            textAlign: 'right'
           }}
         >
           <Button onClick={this.showAddRelation}>
@@ -2243,283 +831,9 @@ class Relation extends PureComponent {
     );
   }
 }
-
-//环境变量
-@connect(
-  ({ user, appControl, teamControl }) => ({}),
-  null,
-  null,
-  { withRef: true }
-)
-class Env extends PureComponent {
-  constructor(arg) {
-    super(arg);
-    this.state = {
-      showAddVar: false,
-      showEditVar: null,
-      deleteVar: null,
-      innerEnvs: [],
-      page: 1,
-      page_size: 5,
-      total: 0,
-      env_name: ""
-    };
-  }
-  componentDidMount() {
-    this.fetchInnerEnvs();
-  }
-  fetchInnerEnvs = () => {
-    const { page, page_size, env_name } = this.state;
-
-    this.props.dispatch({
-      type: "appControl/fetchInnerEnvs",
-      payload: {
-        team_name: globalUtil.getCurrTeamName(),
-        app_alias: this.props.appDetail.service.service_alias,
-        page,
-        page_size,
-        env_name
-      },
-      callback: res => {
-        if (res) {
-          this.setState({
-            innerEnvs: res.list || [],
-            total: res.bean.total
-          });
-        }
-      }
-    });
-  };
-  handleAddVar = () => {
-    this.setState({ showAddVar: true });
-  };
-  handleCancelAddVar = () => {
-    this.setState({ showAddVar: false });
-  };
-  handleSubmitAddVar = vals => {
-    this.props.dispatch({
-      type: "appControl/addInnerEnvs",
-      payload: {
-        team_name: globalUtil.getCurrTeamName(),
-        app_alias: this.props.appDetail.service.service_alias,
-        attr_name: vals.attr_name,
-        attr_value: vals.attr_value,
-        name: vals.name
-      },
-      callback: () => {
-        this.handleCancelAddVar();
-        this.fetchInnerEnvs();
-      }
-    });
-  };
-
-  onEditVar = data => {
-    this.setState({ showEditVar: data });
-  };
-  cancelEditVar = () => {
-    this.setState({ showEditVar: null });
-  };
-  handleEditVar = vals => {
-    const { showEditVar } = this.state;
-    this.props.dispatch({
-      type: "appControl/editEvns",
-      payload: {
-        team_name: globalUtil.getCurrTeamName(),
-        app_alias: this.props.appDetail.service.service_alias,
-        ID: showEditVar.ID,
-        attr_value: vals.attr_value,
-        name: vals.name
-      },
-      callback: () => {
-        this.cancelEditVar();
-        this.fetchInnerEnvs();
-      }
-    });
-  };
-  onDeleteVar = data => {
-    this.setState({ deleteVar: data });
-  };
-  cancelDeleteVar = () => {
-    this.setState({ deleteVar: null });
-  };
-  handleDeleteVar = () => {
-    this.props.dispatch({
-      type: "appControl/deleteEnvs",
-      payload: {
-        team_name: globalUtil.getCurrTeamName(),
-        app_alias: this.props.appDetail.service.service_alias,
-        ID: this.state.deleteVar.ID
-      },
-      callback: () => {
-        this.cancelDeleteVar();
-        this.fetchInnerEnvs();
-      }
-    });
-  };
-
-  onPageChange = page => {
-    this.setState(
-      {
-        page
-      },
-      () => {
-        this.fetchInnerEnvs();
-      }
-    );
-  };
-
-  render() {
-    const innerEnvs = this.state.innerEnvs;
-    return (
-      <Card
-        title="环境变量"
-        style={{
-          marginBottom: 16
-        }}
-      >
-        <Table
-          columns={[
-            {
-              title: "变量名",
-              dataIndex: "attr_name",
-              key: "1",
-              width: "30%",
-              render: v => (
-                <div
-                  style={{
-                    wordBreak: "break-all",
-                    wordWrap: "break-word"
-                  }}
-                >
-                  {v}
-                </div>
-              )
-            },
-            {
-              title: "变量值",
-              dataIndex: "attr_value",
-              key: "2",
-              width: "30%",
-              render: v => (
-                <div
-                  style={{
-                    wordBreak: "break-all",
-                    wordWrap: "break-word"
-                  }}
-                >
-                  {v}
-                </div>
-              )
-            },
-            {
-              title: "说明",
-              dataIndex: "name",
-              key: "3",
-              width: "25%",
-              render: v => (
-                <div
-                  style={{
-                    wordBreak: "break-all",
-                    wordWrap: "break-word"
-                  }}
-                >
-                  {v}
-                </div>
-              )
-            },
-            {
-              title: "操作",
-              dataIndex: "action",
-              key: "4",
-              width: "15%",
-              render: (val, data) => {
-                return (
-                  <Fragment>
-                    {data.is_change ? (
-                      <a
-                        href="javascript:;"
-                        style={{
-                          marginRight: 8
-                        }}
-                        onClick={() => {
-                          this.onDeleteVar(data);
-                        }}
-                      >
-                        删除
-                      </a>
-                    ) : (
-                      ""
-                    )}
-                    {data.is_change ? (
-                      <a
-                        href="javascript:;"
-                        onClick={() => {
-                          this.onEditVar(data);
-                        }}
-                      >
-                        修改
-                      </a>
-                    ) : (
-                      ""
-                    )}
-                  </Fragment>
-                );
-              }
-            }
-          ]}
-          pagination={{
-            current: this.state.page,
-            pageSize: this.state.page_size,
-            total: this.state.total,
-            onChange: this.onPageChange
-          }}
-          dataSource={innerEnvs}
-        />
-        <div
-          style={{
-            textAlign: "right",
-            paddingTop: 20
-          }}
-        >
-          <Button type="default" onClick={this.handleAddVar}>
-            <Icon type="plus" />
-            添加变量
-          </Button>
-        </div>
-        {this.state.showAddVar && (
-          <AddOrEditEnv
-            onCancel={this.handleCancelAddVar}
-            onSubmit={this.handleSubmitAddVar}
-          />
-        )}
-        {this.state.showEditVar && (
-          <AddOrEditEnv
-            onCancel={this.cancelEditVar}
-            onSubmit={this.handleEditVar}
-            data={this.state.showEditVar}
-          />
-        )}
-        {this.state.deleteVar && (
-          <ConfirmModal
-            onOk={this.handleDeleteVar}
-            onCancel={this.cancelDeleteVar}
-            title="删除变量"
-            desc="确定要删除此变量吗？"
-            subDesc="此操作不可恢复"
-          />
-        )}
-      </Card>
-    );
-  }
-}
-
-//端口
-@connect(
-  ({ user, appControl, teamControl }) => ({}),
-  null,
-  null,
-  { withRef: true }
-)
+// 端口
+// eslint-disable-next-line react/no-multi-comp
+@connect(null, null, null, { withRef: true })
 class Ports extends PureComponent {
   constructor(props) {
     super(props);
@@ -2538,7 +852,7 @@ class Ports extends PureComponent {
   fetchPorts = () => {
     const { dispatch } = this.props;
     dispatch({
-      type: "appControl/fetchPorts",
+      type: 'appControl/fetchPorts',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias
@@ -2553,12 +867,12 @@ class Ports extends PureComponent {
   handleSubmitProtocol = (protocol, port, callback) => {
     const { dispatch } = this.props;
     dispatch({
-      type: "appControl/changeProtocol",
+      type: 'appControl/changeProtocol',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
-        port: port,
-        protocol: protocol
+        port,
+        protocol
       },
       callback: () => {
         this.fetchPorts();
@@ -2574,7 +888,7 @@ class Ports extends PureComponent {
   };
   handleEditAlias = vals => {
     this.props.dispatch({
-      type: "appControl/editPortAlias",
+      type: 'appControl/editPortAlias',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
@@ -2589,11 +903,11 @@ class Ports extends PureComponent {
   };
   handleOpenInner = port => {
     this.props.dispatch({
-      type: "appControl/openPortInner",
+      type: 'appControl/openPortInner',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
-        port: port
+        port
       },
       callback: () => {
         this.fetchPorts();
@@ -2602,11 +916,11 @@ class Ports extends PureComponent {
   };
   onCloseInner = port => {
     this.props.dispatch({
-      type: "appControl/closePortInner",
+      type: 'appControl/closePortInner',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
-        port: port
+        port
       },
       callback: () => {
         this.fetchPorts();
@@ -2615,11 +929,11 @@ class Ports extends PureComponent {
   };
   handleOpenOuter = port => {
     this.props.dispatch({
-      type: "appControl/openPortOuter",
+      type: 'appControl/openPortOuter',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
-        port: port
+        port
       },
       callback: () => {
         this.fetchPorts();
@@ -2628,11 +942,11 @@ class Ports extends PureComponent {
   };
   onCloseOuter = port => {
     this.props.dispatch({
-      type: "appControl/closePortOuter",
+      type: 'appControl/closePortOuter',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
-        port: port
+        port
       },
       callback: () => {
         this.fetchPorts();
@@ -2647,7 +961,7 @@ class Ports extends PureComponent {
   };
   handleSubmitDeletePort = () => {
     this.props.dispatch({
-      type: "appControl/deletePort",
+      type: 'appControl/deletePort',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
@@ -2668,7 +982,7 @@ class Ports extends PureComponent {
   };
   handleAddPort = val => {
     this.props.dispatch({
-      type: "appControl/addPort",
+      type: 'appControl/addPort',
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         app_alias: this.props.appDetail.service.service_alias,
@@ -2713,18 +1027,18 @@ class Ports extends PureComponent {
           {!ports.length ? (
             <p
               style={{
-                textAlign: "center"
+                textAlign: 'center'
               }}
             >
               暂无端口
             </p>
           ) : (
-            ""
+            ''
           )}
         </div>
         <div
           style={{
-            textAlign: "right",
+            textAlign: 'right',
             paddingTop: 20
           }}
         >
@@ -2770,38 +1084,54 @@ class Ports extends PureComponent {
     );
   }
 }
-
+// eslint-disable-next-line react/no-multi-comp
+@connect(null, null, null, { withRef: true })
 class RenderProperty extends PureComponent {
   render() {
-    const visible = this.props.visible;
-    const appDetail = this.props.appDetail;
+    const {
+      appDetail,
+      visible,
+      componentPermissions: { isEnv, isRely, isStorage, isPort }
+    } = this.props;
     return (
       <div
         style={{
-          display: visible ? "block" : "none"
+          display: visible ? 'block' : 'none'
         }}
       >
-        <Ports appDetail={appDetail} />
-        <Env appDetail={appDetail} />
-        <Mnt appDetail={appDetail} />
-        <Relation appDetail={appDetail} />
+        {!isPort && !isEnv && !isStorage && !isRely && <NoPermTip />}
+
+        {isPort && <Ports appDetail={appDetail} />}
+        {isEnv && (
+          <EnvironmentVariable
+            title="环境变量"
+            type="Inner"
+            appAlias={appDetail.service.service_alias}
+          />
+        )}
+        {isStorage && <Mnt appDetail={appDetail} />}
+        {isRely && <Relation appDetail={appDetail} />}
       </div>
     );
   }
 }
-
+// eslint-disable-next-line react/no-multi-comp
 @connect(
-  ({ user, appControl }) => ({ currUser: user.currentUser }),
+  ({ teamControl }) => ({
+    currentTeamPermissionsInfo: teamControl.currentTeamPermissionsInfo
+  }),
   null,
   null,
-  { withRef: true }
+  {
+    withRef: true
+  }
 )
 export default class Index extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      //property、deploy
-      type: "property"
+      componentPermissions: this.handlePermissions('queryComponentInfo'),
+      type: 'property'
     };
   }
   getAppAlias() {
@@ -2809,44 +1139,47 @@ export default class Index extends PureComponent {
   }
   handleType = type => {
     if (this.state.type !== type) {
-      this.setState({ type: type });
+      this.setState({ type });
     }
   };
+  handlePermissions = type => {
+    const { currentTeamPermissionsInfo } = this.props;
+    return roleUtil.querySpecifiedPermissionsInfo(
+      currentTeamPermissionsInfo,
+      type
+    );
+  };
   render() {
-    const appDetail = this.props.appDetail || {};
-    const type = this.state.type;
+    const { appDetail } = this.props;
+    const { type, componentPermissions } = this.state;
 
     return (
       <div>
         <div
           style={{
-            overflow: "hidden"
+            overflow: 'hidden'
           }}
         >
           <div className={styles.typeBtnWrap}>
             <Affix offsetTop={0}>
               <div>
                 <span
-                  className={
-                    styles.typeBtn +
-                    " " +
-                    (type === "property" ? styles.active : "")
-                  }
+                  className={`${styles.typeBtn} ${
+                    type === 'property' ? styles.active : ''
+                  }`}
                   onClick={() => {
-                    this.handleType("property");
+                    this.handleType('property');
                   }}
                 >
                   基本属性
                   <Icon type="right" />
                 </span>
                 <span
-                  className={
-                    styles.typeBtn +
-                    " " +
-                    (type === "deploy" ? styles.active : "")
-                  }
+                  className={`${styles.typeBtn} ${
+                    type === 'deploy' ? styles.active : ''
+                  }`}
                   onClick={() => {
-                    this.handleType("deploy");
+                    this.handleType('deploy');
                   }}
                 >
                   部署属性
@@ -2859,16 +1192,22 @@ export default class Index extends PureComponent {
           <div
             className={styles.content}
             style={{
-              overflow: "hidden",
+              overflow: 'hidden',
               marginBottom: 90
             }}
           >
             <RenderDeploy
               updateDetail={this.props.updateDetail}
               appDetail={appDetail}
-              visible={type === "deploy"}
+              visible={type === 'deploy'}
+              componentPermissions={componentPermissions}
             />
-            <RenderProperty appDetail={appDetail} visible={type !== "deploy"} />
+            <RenderProperty
+              key={appDetail.service.extend_method}
+              appDetail={appDetail}
+              visible={type !== 'deploy'}
+              componentPermissions={componentPermissions}
+            />
           </div>
         </div>
       </div>

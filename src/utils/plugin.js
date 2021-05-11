@@ -5,9 +5,10 @@ const categoryMap = {
   'analyst-plugin:perf': '性能分析',
   'init-plugin': '初始化类型',
   'general-plugin': '一般类型',
+  'exporter-plugin': '监控',
   downstream_net_plugin: '网络治理',
   perf_analyze_plugin: '性能分析',
-  inandout_net_plugin:'出口入口共治网络',
+  inandout_net_plugin: '出口入口共治网络',
 };
 
 const inType = {
@@ -34,6 +35,28 @@ const versionStatusMap = {
   unfixed: '未固定',
 };
 
+const mountMap = [
+  '/',
+  '/bin',
+  '/boot',
+  '/dev',
+  '/etc',
+  '/home',
+  '/lib',
+  '/lib64',
+  '/opt',
+  '/proc',
+  '/root',
+  '/sbin',
+  '/srv',
+  '/sys',
+  '/tmp',
+  '/usr',
+  '/var',
+  '/user/local',
+  '/user/sbin',
+  '/user/bin',
+];
 export default {
   getCategoryCN(category) {
     return categoryMap[category] || '未知类型';
@@ -60,8 +83,7 @@ export default {
   canEditInfoAndConfig(bean) {
     return bean.plugin_version_status !== 'fixed';
   },
-  // 是否可以构建
-  canBuild(bean) {
-    return bean.plugin_version_status !== 'fixed' && bean.build_status !== 'building';
+  isMountPath(path) {
+    return mountMap.includes(path);
   },
 };

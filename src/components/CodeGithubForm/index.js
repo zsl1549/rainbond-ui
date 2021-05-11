@@ -65,7 +65,7 @@ export default class Index extends PureComponent {
   handleAddGroup = (vals) => {
     const { setFieldsValue } = this.props.form;
     this.props.dispatch({
-      type: "groupControl/addGroup",
+      type: "application/addGroup",
       payload: {
         team_name: globalUtil.getCurrTeamName(),
         ...vals,
@@ -80,7 +80,7 @@ export default class Index extends PureComponent {
               region_name: globalUtil.getCurrRegionName(),
             },
             callback: () => {
-              setFieldsValue({ group_id: group.ID });
+              setFieldsValue({ group_id: group.group_id });
               this.cancelAddGroup();
             },
           });
@@ -156,7 +156,7 @@ export default class Index extends PureComponent {
     const branchs = this.state.branchs || [];
     return (
       <Form layout="horizontal" hideRequiredMark>
-       <Form.Item {...formItemLayout} label="应用">
+       <Form.Item {...formItemLayout} label="应用名称">
           {getFieldDecorator("group_id", {
             initialValue: (this.props.handleType && this.props.handleType === "Service") ? Number(this.props.groupId) : data.group_id,
             rules: [

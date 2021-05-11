@@ -1,111 +1,101 @@
-import React from "react";
-import { Link, Redirect, Switch, Route } from "dva/router";
-import DocumentTitle from "react-document-title";
-import { Icon } from "antd";
-import { connect } from "dva";
-import GlobalFooter from "../components/GlobalFooter";
-import styles from "./UserLayout.less";
-import logo from "../../public/logo.png";
-import { getRoutes } from "../utils/utils";
-import configureGlobal from "../utils/configureGlobal";
-import cookie from "../utils/cookie";
-
-const links = [
-  {
-    key: "help",
-    title: "帮助",
-    href: ""
-  },
-  {
-    key: "privacy",
-    title: "隐私",
-    href: ""
-  },
-  {
-    key: "terms",
-    title: "条款",
-    href: ""
-  }
-];
-
-const copyright = configureGlobal.rainbondTextShow && (
-  <div>
-    Copyright
-    <Icon type="copyright" />
-    2018 好雨科技
-  </div>
-);
+import { connect } from 'dva';
+import { Link } from 'dva/router';
+import React from 'react';
+import cloud from '../../public/cloud.png';
+import logo from '../../public/logo.png';
+import globalUtil from '../utils/global';
+import oauthUtil from '../utils/oauth';
+import rainbondUtil from '../utils/rainbond';
+import CustomFooter from './CustomFooter';
+import styles from './UserLayout.less';
 
 class UserLayout extends React.PureComponent {
-  componentDidMount() {
-    const load = document.getElementById("load");
-    if (load) {
-      document.body.removeChild(load);
-    }
+  constructor(props) {
+    super(props);
+    this.state = {
+      isRender: false
+    };
   }
-  getPageTitle() {
-    const { routerData, location, rainbondInfo } = this.props;
-    const { pathname } = location;
-    let title =
-      (rainbondInfo &&
-        rainbondInfo.title !== undefined &&
-        rainbondInfo.title) ||
-      "Rainbond is Serverless PaaS , A new generation of easy-to-use cloud management platforms based on kubernetes.";
-    if (routerData[pathname] && routerData[pathname].name) {
-      title = `${routerData[pathname].name} - ${title} `;
-    }
-    return title;
+  componentWillMount() {
+    const { dispatch } = this.props;
+    // 初始化 获取RainbondInfo信息
+    dispatch({
+      type: 'global/fetchRainbondInfo',
+      callback: info => {
+        if (info) {
+          globalUtil.putLog(info);
+          const { query } = this.props.location;
+          const isLogin = this.props.location.pathname === '/user/login';
+          if (isLogin) {
+            const { redirect } = query;
+            if (redirect) {
+              window.localStorage.setItem('redirect', redirect);
+            }
+          }
+          // check auto login
+          const isOauth =
+            rainbondUtil.OauthbEnable(info) ||
+            rainbondUtil.OauthEnterpriseEnable(info);
+          let oauthInfo =
+            info.enterprise_center_oauth && info.enterprise_center_oauth.value;
+          if (!oauthInfo && info.oauth_services && info.oauth_services.value) {
+            info.oauth_services.value.map(item => {
+              if (item.is_auto_login) {
+                oauthInfo = item;
+              }
+              return null;
+            });
+          }
+          if (isOauth && oauthInfo && isLogin) {
+            const isDisableAutoLogin = query.disable_auto_login;
+            if (oauthInfo.is_auto_login && isDisableAutoLogin !== 'true') {
+              globalUtil.removeCookie();
+              window.location.href = oauthUtil.getAuthredictURL(oauthInfo);
+            }
+            this.isRender(!oauthInfo.is_auto_login);
+          } else {
+            this.isRender(true);
+          }
+        }
+      }
+    });
   }
-
-  shouldComponentUpdate() {
-    return true;
-  }
+  isRender = isRender => {
+    this.setState({
+      isRender
+    });
+  };
   render() {
-    const { routerData, match, rainbondInfo, nouse } = this.props;
-
+    const { rainbondInfo, children } = this.props;
+    const { isRender } = this.state;
+    const fetchLogo = rainbondUtil.fetchLogo(rainbondInfo) || logo;
+    const isEnterpriseEdition = rainbondUtil.isEnterpriseEdition(rainbondInfo);
+    if (!rainbondInfo || !isRender) {
+      return null;
+    }
     return (
-      <DocumentTitle title={this.getPageTitle()}>
-        <div className={styles.container}>
-          <div className={styles.content}>
-            {!nouse && (
-              <div className={styles.top}>
-                <div className={styles.header}>
-                  <Link to="/">
-                    {/* <img
-                    style={{
-                    verticalAlign: 'middle'
-                  }}
-                    alt="logo"
-                    className={styles.logo}
-                    src={rainbondInfo.logo || logo}/> */}
-                    <h1 className={styles.titles}>{rainbondInfo.title}</h1>
-                  </Link>
-                </div>
-                <div className={styles.desc}>
-                  无服务器PaaS、以应用为中心、软件定义一切
-                </div>
-              </div>
-            )}
-            <Switch>
-              {getRoutes(match.path, routerData).map(item => (
-                <Route
-                  key={item.key}
-                  path={item.path}
-                  component={item.component}
-                  exact={item.exact}
-                />
-              ))}
-              <Redirect exact from="/user" to="/user/login" />
-            </Switch>
+      <div className={styles.container}>
+        <div className={styles.headers}>
+          <div className={styles.logo}>
+            <Link to="/">
+              <img src={fetchLogo} alt="LOGO" />
+            </Link>
           </div>
-          <GlobalFooter links={links} copyright={copyright} />
         </div>
-      </DocumentTitle>
+        <div className={styles.content}>
+          <div className={styles.contentBox}>
+            <div className={styles.contentBoxLeft}>
+              <img src={cloud} alt="云原生应用管理平台" />
+            </div>
+            <div className={styles.contentBoxRight}>{children}</div>
+          </div>
+        </div>
+        {!isEnterpriseEdition && <CustomFooter />}
+      </div>
     );
   }
 }
 
 export default connect(({ global }) => ({
-  rainbondInfo: global.rainbondInfo,
-  nouse: global.nouse
+  rainbondInfo: global.rainbondInfo
 }))(UserLayout);

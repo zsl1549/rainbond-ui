@@ -4,7 +4,6 @@
 import React, { PureComponent, Fragment } from "react";
 import moment from "moment";
 import { connect } from "dva";
-import { Link, Switch, Route } from "dva/router";
 import {
   Row,
   Col,
@@ -41,7 +40,7 @@ export default class Index extends PureComponent {
       page_size: 10,
       total: "",
       bean: "",
-      loading: true,
+      loading: true
     };
   }
   componentDidMount() {
@@ -109,19 +108,25 @@ export default class Index extends PureComponent {
     const { total, page_num, page_size, bean } = this.state;
     return (
       <Modal
-        title={
-          <span>构建版本信息</span>
-        }
+        title={<span>构建版本信息</span>}
         width={1200}
         visible={true}
         onCancel={this.handleCancel}
         footer={[<Button onClick={this.handleCancel}>关闭</Button>]}
       >
         <div className={styles.tdPadding}>
-
           {bean.success_num && total && (
             <span className={styles.floatright}>
-              成功率：<a>{(Math.round(Number(bean.success_num) / (total == "0" ? 1 : Number(total)) * 10000) / 100.00) + "%"}</a>
+              成功率：
+              <a>
+                {Math.round(
+                  (Number(bean.success_num) /
+                    (total == "0" ? 1 : Number(total))) *
+                    10000
+                ) /
+                  100.0 +
+                  "%"}
+              </a>
             </span>
           )}
           {bean.failure_num && (
@@ -151,15 +156,25 @@ export default class Index extends PureComponent {
                 dataIndex: "build_version",
                 width: 200,
                 align: "left",
-                render: (text) => (
-                  <Tooltip title={bean.current_version ? `${text}(当前版本)` : text}>
-                    <div style={{
-                      width: 200,
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden"
-                    }}>
-                      {text == bean.current_version ? (<span style={{ color: "#2593fb" }}>{`${text}(当前版本)`}</span>) : (<span>{text}</span>)}
+                render: text => (
+                  <Tooltip
+                    title={bean.current_version ? `${text}(当前版本)` : text}
+                  >
+                    <div
+                      style={{
+                        width: 200,
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden"
+                      }}
+                    >
+                      {text == bean.current_version ? (
+                        <span
+                          style={{ color: "#2593fb" }}
+                        >{`${text}(当前版本)`}</span>
+                      ) : (
+                        <span>{text}</span>
+                      )}
                     </div>
                   </Tooltip>
                 )
@@ -169,14 +184,18 @@ export default class Index extends PureComponent {
                 dataIndex: "build_user",
                 width: 100,
                 align: "center",
-                render: (v) => (
+                render: v => (
                   <Tooltip title={v}>
-                    <div style={{
-                      width: 100,
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden"
-                    }}>{v}</div>
+                    <div
+                      style={{
+                        width: 100,
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden"
+                      }}
+                    >
+                      {v}
+                    </div>
                   </Tooltip>
                 )
               },
@@ -185,14 +204,18 @@ export default class Index extends PureComponent {
                 dataIndex: "create_time",
                 width: 205,
                 align: "left",
-                render: (v) => (
+                render: v => (
                   <Tooltip title={v}>
-                    <div style={{
-                      width: 205,
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden"
-                    }}>{v}</div>
+                    <div
+                      style={{
+                        width: 205,
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden"
+                      }}
+                    >
+                      {v}
+                    </div>
                   </Tooltip>
                 )
               },
@@ -201,31 +224,38 @@ export default class Index extends PureComponent {
                 dataIndex: "kind",
                 width: 100,
                 align: "center",
-                render: (v) => (
+                render: v => (
                   <Tooltip title={v}>
-                    <div style={{
-                      width: 100,
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden"
-                    }}>{v}</div>
+                    <div
+                      style={{
+                        width: 100,
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden"
+                      }}
+                    >
+                      {v}
+                    </div>
                   </Tooltip>
                 )
-
               },
               {
                 title: "提交信息",
                 dataIndex: "commit_msg",
                 width: 120,
                 align: "center",
-                render: (v) => (
+                render: v => (
                   <Tooltip title={v}>
-                    <div style={{
-                      width: 120,
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden"
-                    }}>{v}</div>
+                    <div
+                      style={{
+                        width: 120,
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden"
+                      }}
+                    >
+                      {v}
+                    </div>
                   </Tooltip>
                 )
               },
@@ -236,12 +266,16 @@ export default class Index extends PureComponent {
                 align: "left",
                 render: (v, data) => (
                   <Tooltip title={v}>
-                    <div style={{
-                      width: 120,
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden"
-                    }}>{data.repo_url || data.image_url}</div>
+                    <div
+                      style={{
+                        width: 120,
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden"
+                      }}
+                    >
+                      {data.repo_url || data.image_url}
+                    </div>
                   </Tooltip>
                 )
               },
@@ -257,14 +291,20 @@ export default class Index extends PureComponent {
                     failure: "失败",
                     timeout: "超时"
                   };
-                  return <Tooltip title={v}>
-                    <div style={{
-                      width: 90,
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden"
-                    }}>{map[v] || v}</div>
-                  </Tooltip>
+                  return (
+                    <Tooltip title={v}>
+                      <div
+                        style={{
+                          width: 90,
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden"
+                        }}
+                      >
+                        {map[v] || v}
+                      </div>
+                    </Tooltip>
+                  );
                 }
               },
               {
@@ -284,7 +324,9 @@ export default class Index extends PureComponent {
                         >
                           升级
                         </a>
-                      ) : (data.upgrade_or_rollback == -1 && data.status == "success" && data.build_version != bean.current_version) ? (
+                      ) : data.upgrade_or_rollback == -1 &&
+                        data.status == "success" &&
+                        data.build_version != bean.current_version ? (
                         <a
                           href="javascript:;"
                           onClick={() => {
@@ -294,16 +336,17 @@ export default class Index extends PureComponent {
                           回滚
                         </a>
                       ) : (
-                            ""
-                          )}
+                        ""
+                      )}
                       <Popconfirm
                         title="确定要删除此版本吗?"
                         onConfirm={() => {
                           this.handleDel(data);
                         }}
                       >
-                        {data.build_version != bean.current_version &&
-                          <a href="javascript:;">删除</a>}
+                        {data.build_version != bean.current_version && (
+                          <a href="javascript:;">删除</a>
+                        )}
                       </Popconfirm>
                     </Fragment>
                   );

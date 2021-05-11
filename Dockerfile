@@ -1,6 +1,6 @@
-FROM rainbond/rbd-ui-base:V5.1
+ARG BASE_VERSION=V5.3
+ARG IMAGE_DOMAIN=docker.io
+ARG IMAGE_NAMESPACE=rainbond
 
-RUN mkdir /dist
-
+FROM ${IMAGE_DOMAIN}/${IMAGE_NAMESPACE}/rbd-ui-base:${BASE_VERSION}
 ADD dist /dist
-

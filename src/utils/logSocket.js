@@ -1,9 +1,11 @@
-import TimerQueue from "./timerQueue";
+/* eslint-disable consistent-return */
+/* eslint-disable no-underscore-dangle */
+import TimerQueue from './timerQueue';
 
 function noop() {}
 
-function LogSocket(option) {
-  option = option || {};
+function LogSocket(op) {
+  const option = op || {};
   this.url = option.url;
   this.eventId = option.eventId;
   this.onOpen = option.onOpen || noop;
@@ -14,43 +16,59 @@ function LogSocket(option) {
   this.onSuccess = option.onSuccess || noop;
   this.onComplete = option.onComplete || noop;
   this.onFail = option.onFail || noop;
-  this.webSocket = new WebSocket(this.url);
-  this.webSocket.onopen = this._onOpen.bind(this);
-  this.webSocket.onmessage = this._onMessage.bind(this);
-  this.webSocket.onclose = this._onClose.bind(this);
-  this.webSocket.onerror = this._onError.bind(this);
-  this.timerQueue = new TimerQueue({
-    onExecute: this.onMessage,
-    autoStart: true,
-    interval: option.interval || 10,
-  });
+  this.interval = option.interval || 10;
+  if (
+    this.url &&
+    /(ws|wss):\/\/[\w\-_]+([\w\-_]+)+([\w\-.,@?^=%&:/~+#]*[\w\-@?^=%&/~+#])?/.test(
+      this.url
+    )
+  ) {
+    this.init();
+  }
 }
 
 LogSocket.prototype = {
   constructor: LogSocket,
+  init() {
+    this.webSocket = new WebSocket(this.url);
+    this.webSocket.onopen = this._onOpen.bind(this);
+    this.webSocket.onmessage = this._onMessage.bind(this);
+    this.webSocket.onclose = this._onClose.bind(this);
+    this.webSocket.onerror = this._onError.bind(this);
+    this.timerQueue = new TimerQueue({
+      onExecute: this.onMessage,
+      autoStart: true,
+      interval: this.interval
+    });
+  },
   getSocket() {
     return this.webSocket;
   },
   close() {
     this.webSocket && this.webSocket.close();
   },
-  _onOpen(evt) {
-    this.webSocket.send(`event_id=${this.eventId}`);
-    this.onOpen();
+  _onOpen() {
+    try {
+      this.webSocket.send(`event_id=${this.eventId}`);
+      this.onOpen();
+    } catch (err) {
+      console.log('err', err);
+      return false;
+    }
   },
   _onMessage(evt) {
     // 代表连接成功， 不做任何处理
-    if (evt.data != "ok") {
+    if (evt.data != 'ok') {
       const data = JSON.parse(evt.data);
 
       // 判断是否最后一步
-      if (data.step === "callback" || data.step === "last") {
+      if (data.step === 'callback' || data.step === 'last') {
         this.webSocket && this.webSocket.close();
-        if (data.status === "success") {
+        if (data.status === 'success') {
           this.onSuccess(data);
-        } else if (data.status === "timeout") {
+        } else if (data.status === 'timeout') {
           this.onTimeout(data);
-        } else if (data.status === "failure") {
+        } else if (data.status === 'failure') {
           data.message = `<span style="color:#a94442">${data.message}</span>`;
           this.onFail(data);
         }
@@ -60,10 +78,10 @@ LogSocket.prototype = {
     }
   },
   _onClose(evt) {
-    this.onClose();
+    this.onClose && this.onClose();
   },
   _onError() {
-    this.onError();
+    this.onError && this.onError();
   },
 
   destroy() {
@@ -76,7 +94,7 @@ LogSocket.prototype = {
     this.onFail = null;
     this.destroyed = true;
     this.close();
-  },
+  }
 };
 
 export default LogSocket;
