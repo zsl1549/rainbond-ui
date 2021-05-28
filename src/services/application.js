@@ -8,7 +8,14 @@ export async function getServiceNameList(params) {
     `${apiconfig.baseUrl}/console/teams/${params.tenantName}/groups/${params.group_id}/k8sservices `
   );
 }
-
+export async function Toupgrade(params) {
+  return request(
+    `${apiconfig.baseUrl}/console/teams/${params.team_name}/groups/${params.group_id}/upgradable_num`,
+    {
+      method: 'get'
+    }
+  );
+}
 export async function CheckK8sServiceName(params) {
   return request(
     `${apiconfig.baseUrl}/console/teams/${params.tenantName}/checkK8sServiceName `,
@@ -173,6 +180,16 @@ export async function getGroupDetail(body = {}, handleError) {
     }
   );
 }
+
+export async function getComponentVersion(body = {}, handleError) {
+  return request(
+    `${apiconfig.baseUrl}/console/teams/${body.team_name}/groups/${body.group_id}/rainbondapps/${body.template_name}`,
+    {
+      handleError
+    }
+  );
+}
+
 /*
 	获取某个应用组的信息
 */

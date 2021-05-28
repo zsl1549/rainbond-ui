@@ -897,6 +897,20 @@ export async function deleteEnterpriseAdmin(param) {
 }
 
 /* 获取当前用户团队列表（搜索） */
+export async function fetchMyTeams(param) {
+  return request(
+    `${apiconfig.baseUrl}/console/enterprise/${param.enterprise_id}/myteams`,
+    {
+      method: 'get',
+      params: {
+        page: param.page,
+        page_size: param.page_size,
+        name: param.name
+      }
+    }
+  );
+}
+
 export async function fetchUserTeams(param) {
   return request(
     `${apiconfig.baseUrl}/console/enterprise/${param.enterprise_id}/user/${param.user_id}/teams`,
@@ -912,9 +926,10 @@ export async function fetchUserTeams(param) {
 }
 
 /* 查询企业列表 */
-export async function fetchEnterpriseList() {
+export async function fetchEnterpriseList(handleError) {
   return request(`${apiconfig.baseUrl}/console/enterprises`, {
-    method: 'get'
+    method: 'get',
+    handleError
   });
 }
 
@@ -1174,7 +1189,7 @@ export async function toCreatUser(params, handleError) {
 }
 
 /** 编辑用户 */
-export async function upEnterpriseUsers(params) {
+export async function upEnterpriseUsers(params = {}, handleError) {
   return request(
     `${apiconfig.baseUrl}/console/enterprise/${params.enterprise_id}/user/${params.user_id}`,
     {
@@ -1188,7 +1203,8 @@ export async function upEnterpriseUsers(params) {
         password: params.password,
         re_password: params.password,
         role_ids: params.role_ids
-      }
+      },
+      handleError
     }
   );
 }

@@ -476,7 +476,7 @@ class CreateAppModels extends PureComponent {
                 ]
               })(<Input placeholder="请输入名称" />)}
               <div className={styles.conformDesc}>
-                请输入创建的应用模版名称，最多32字.
+                请输入创建的应用模版名称，最大长度32位.
               </div>
             </FormItem>
             {!market_id && (
@@ -496,6 +496,7 @@ class CreateAppModels extends PureComponent {
                 })(
                   isShared ? (
                     <Select
+                      getPopupContainer={triggerNode => triggerNode.parentNode}
                       placeholder="请选择发布范围"
                       dropdownRender={menu => (
                         <div>
@@ -561,6 +562,7 @@ class CreateAppModels extends PureComponent {
                 ]
               })(
                 <Select
+                  getPopupContainer={triggerNode => triggerNode.parentNode}
                   mode="tags"
                   style={{ width: '100%' }}
                   onSelect={this.handleOnSelect}

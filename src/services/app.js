@@ -143,14 +143,7 @@ export function getActionLogDetail(
 /*
 	部署应用
 */
-export function deploy(
-  body = {
-    team_name,
-    app_alias,
-    group_version,
-    is_upgrate
-  }
-) {
+export function deploy(body = {}, handleError) {
   return request(
     `${apiconfig.baseUrl}/console/teams/${body.team_name}/apps/${body.app_alias}/deploy`,
     {
@@ -158,7 +151,8 @@ export function deploy(
       data: {
         is_upgrate: !!body.is_upgrate,
         group_version: body.group_version
-      }
+      },
+      handleError
     }
   );
 }
@@ -983,8 +977,8 @@ export async function addInnerEnvs(body = {}) {
       method: 'post',
       data: {
         name: body.name,
-        attr_name: body.attr_name,
-        attr_value: body.attr_value,
+        attr_name: body.attr_name || '',
+        attr_value: body.attr_value || '',
         scope: body.scope ? body.scope : 'inner',
         is_change: true
       }
@@ -1032,7 +1026,7 @@ export async function addOuterEnvs(body = {}) {
       data: {
         name: body.name,
         attr_name: body.attr_name,
-        attr_value: body.attr_value,
+        attr_value: body.attr_value || '',
         scope: 'outer'
       }
     }
@@ -1050,7 +1044,7 @@ export async function editEvns(body = {}) {
       method: 'put',
       data: {
         name: body.name,
-        attr_value: body.attr_value
+        attr_value: body.attr_value || ''
       }
     }
   );

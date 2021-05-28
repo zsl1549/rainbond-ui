@@ -41,10 +41,6 @@ class EvnOption extends React.Component {
   };
 
   validAttrName = (_, value, callback) => {
-    if (!value) {
-      callback('请输入属性名');
-      return;
-    }
     if (value && !/^[-._a-zA-Z][-._a-zA-Z0-9]*$/.test(value)) {
       callback('只能由 - . _ 字母和数字组成，不能以数字开头');
       return;
@@ -86,7 +82,15 @@ class EvnOption extends React.Component {
         <Form.Item style={{ width: 100 }}>
           {getFieldDecorator('attr_name', {
             initialValue: data.attr_name || '',
-            rules: [{ validator: this.validAttrName }]
+            rules: [
+              {
+                required: true,
+                message: '请输入属性名'
+              },
+              {
+                validator: this.validAttrName
+              }
+            ]
           })(
             <Input
               onChange={e => {
@@ -103,11 +107,14 @@ class EvnOption extends React.Component {
             rules: [{ required: false, message: '协议' }]
           })(
             <Select
+              showArrow
               mode="multiple"
+              getPopupContainer={triggerNode => triggerNode.parentNode}
               onChange={values => {
                 this.handleOnchange('protocol', values);
               }}
-              style={{ width: 100 }}
+              style={{ width: 120 }}
+              placeholder="选择协议"
             >
               <Option value="">所有协议</Option>
               {protocols.map(item => (
@@ -122,6 +129,7 @@ class EvnOption extends React.Component {
             rules: [{ required: true, message: '属性名' }]
           })(
             <Select
+              getPopupContainer={triggerNode => triggerNode.parentNode}
               onChange={values => {
                 this.handleOnchange('attr_type', values);
               }}
@@ -169,6 +177,7 @@ class EvnOption extends React.Component {
             rules: [{ required: false, message: '默认值' }]
           })(
             <Select
+              getPopupContainer={triggerNode => triggerNode.parentNode}
               onChange={values => {
                 this.handleOnchange('is_change', values);
               }}
@@ -224,7 +233,6 @@ class EnvGroup extends PureComponent {
       onDidMount(this);
     }
   }
-
   check() {
     let res = true;
     for (let i = 0; i < this.groupItem.length; i++) {
@@ -255,7 +263,7 @@ class EnvGroup extends PureComponent {
     setGroup = group.filter(item => !!item).filter(item => item.key !== key);
     this.setState({ group: setGroup }, () => {
       if (onChange) {
-        onChange(group.map(item => item.value));
+        onChange(setGroup.map(item => item.value));
       }
     });
   };
@@ -282,6 +290,10 @@ class EnvGroup extends PureComponent {
   render() {
     let { group } = this.state;
     group = group.filter(item => !!item);
+    const IconStyle = {
+      cursor: 'pointer',
+      fontSize: 20
+    };
     return (
       <div>
         {(group || []).map(item => (
@@ -300,20 +312,14 @@ class EnvGroup extends PureComponent {
                 onClick={() => {
                   this.handlePlus(item.key);
                 }}
-                style={{
-                  cursor: 'pointer',
-                  fontSize: 20
-                }}
+                style={IconStyle}
                 type="plus"
               />
               <Icon
                 onClick={() => {
                   this.handleMinus(item.key);
                 }}
-                style={{
-                  cursor: 'pointer',
-                  fontSize: 20
-                }}
+                style={IconStyle}
                 type="minus"
               />
             </div>
@@ -326,10 +332,10 @@ class EnvGroup extends PureComponent {
 
 const formItemLayout = {
   labelCol: {
-    span: 4
+    span: 3
   },
   wrapperCol: {
-    span: 20
+    span: 21
   }
 };
 
@@ -346,16 +352,19 @@ export default class Index extends PureComponent {
   handleSubmit = () => {
     const { form, onSubmit } = this.props;
     form.validateFields((err, fieldsValue) => {
-      if (!err && onSubmit) {
-        if (fieldsValue.options) {
-          fieldsValue.options.map(item => {
-            if (item.protocol) {
-              item.protocol = item.protocol.join(',');
-            }
-            return item;
-          });
+      if (this.envGroup) {
+        const check = this.envGroup.check();
+        if (!err && onSubmit && check) {
+          if (fieldsValue.options) {
+            fieldsValue.options.map(item => {
+              if (item.protocol) {
+                item.protocol = item.protocol.join(',');
+              }
+              return item;
+            });
+          }
+          onSubmit(fieldsValue);
         }
-        onSubmit(fieldsValue);
       }
     });
   };
@@ -371,15 +380,7 @@ export default class Index extends PureComponent {
       setFieldsValue({ injection: 'auto' });
     }
   };
-  checkInjection = (_rule, _value, callback) => {
-    if (this.envGroup) {
-      if (this.envGroup.check()) {
-        callback();
-      } else {
-        callback();
-      }
-    }
-  };
+
   handleEvnGroupMount = com => {
     this.envGroup = com;
   };
@@ -390,7 +391,7 @@ export default class Index extends PureComponent {
     return (
       <Modal
         title={title || '新增配置组'}
-        width={1000}
+        width={1100}
         visible
         confirmLoading={loading}
         onOk={this.handleSubmit}
@@ -438,8 +439,7 @@ export default class Index extends PureComponent {
           </Form.Item>
           <Form.Item validateStatus="t" {...formItemLayout} label="配置项">
             {getFieldDecorator('options', {
-              initialValue: data.options || [],
-              rules: [{ validator: this.checkInjection }]
+              initialValue: data.options || []
             })(
               <EnvGroup
                 onDidMount={this.handleEvnGroupMount}

@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-target-blank */
 /* eslint-disable no-unused-vars */
 /* eslint-disable camelcase */
 /* eslint-disable no-underscore-dangle */
@@ -93,7 +94,14 @@ export default class Index extends PureComponent {
   }
 
   componentDidMount() {
-    this.loadOverview();
+    const { currUser } = this.props;
+    const teamPermissions = userUtil.getTeamByTeamPermissions(
+      currUser.teams,
+      globalUtil.getCurrTeamName()
+    );
+    if (teamPermissions && teamPermissions.length !== 0) {
+      this.loadOverview();
+    }
   }
   componentWillUnmount() {
     this.handleClearTimeout(this.loadAppsTimer);
@@ -347,18 +355,22 @@ export default class Index extends PureComponent {
   };
 
   handleError = err => {
-    if (err && err.data && err.data.msg_show) {
-      notification.warning({
-        message: `请求错误`,
-        description: err.data.msg_show
-      });
-    }
+    this.handleTeamPermissions(() => {
+      if (err && err.data && err.data.msg_show) {
+        notification.warning({
+          message: `警告`,
+          description: err.data.msg_show
+        });
+      }
+    });
   };
 
   handleTimers = (timerName, callback, times) => {
-    this[timerName] = setTimeout(() => {
-      callback();
-    }, times);
+    this.handleTeamPermissions(() => {
+      this[timerName] = setTimeout(() => {
+        callback();
+      }, times);
+    });
   };
 
   isPublicRegion() {
@@ -481,6 +493,16 @@ export default class Index extends PureComponent {
       }
     });
   };
+  handleTeamPermissions = callback => {
+    const { currUser } = this.props;
+    const teamPermissions = userUtil.getTeamByTeamPermissions(
+      currUser.teams,
+      globalUtil.getCurrTeamName()
+    );
+    if (teamPermissions && teamPermissions.length !== 0) {
+      callback();
+    }
+  };
 
   renderActivities() {
     const list = this.props.events || [];
@@ -597,7 +619,7 @@ export default class Index extends PureComponent {
         dataIndex: 'metric',
         key: 'metric',
         width: '70%',
-        render: (text, record) => (
+        render: (_, record) => (
           <Tooltip title={record.metric.host}>
             <div
               style={{
@@ -620,22 +642,18 @@ export default class Index extends PureComponent {
         dataIndex: 'value',
         key: 'value',
         width: '30%',
-        sorter: (a, b) => a.range - b.range,
-        render: (text, record) => (
-          // <Trend flag={record.status === 1 ? 'down' : 'up'}>
+        render: (_, record) => (
           <span
             style={{
               wordBreak: 'break-all',
               wordWrap: 'break-word',
               marginRight: 4,
               display: 'inline-block'
-              // minHeight: "35px"
             }}
           >
             {record.value[1]}
           </span>
         ),
-        // </Trend>
         align: 'right'
       }
     ];
@@ -646,7 +664,7 @@ export default class Index extends PureComponent {
         dataIndex: 'metric',
         key: 'metric',
         width: '65%',
-        render: (text, record) => (
+        render: (_, record) => (
           <Link
             to={`/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/components/${
               record.metric.service_alias
@@ -674,8 +692,7 @@ export default class Index extends PureComponent {
         dataIndex: 'value',
         key: 'value',
         width: '35%',
-        sorter: (a, b) => a.range - b.range,
-        render: (text, record) => (
+        render: (_, record) => (
           <span
             style={{
               display: 'inline-block',
@@ -721,7 +738,7 @@ export default class Index extends PureComponent {
             <FormattedMessage id="team.appNum" />
           </p>
           <div>
-            <div style={{ color: 'rgba(0,0,0,.85)' }}>
+            <div style={{ color: 'rgba(0,0,0,.85)' }} className={styles.hands}>
               {index.overviewInfo.team_app_num || 0}
             </div>
           </div>
@@ -731,7 +748,7 @@ export default class Index extends PureComponent {
             <Badge status="processing" />
             <FormattedMessage id="team.componentNum" />
           </p>
-          <div style={{ color: 'rgba(0,0,0,.85)' }}>
+          <div style={{ color: 'rgba(0,0,0,.85)' }} className={styles.hands}>
             {index.overviewInfo.team_service_num || 0}
           </div>
         </div>
@@ -759,7 +776,7 @@ export default class Index extends PureComponent {
             <Badge status="warning" />
             <FormattedMessage id="team.memoryUsage" />
           </p>
-          <div>
+          <div className={styles.hands}>
             <Tooltip
               style={{ color: 'rgba(0,0,0,.85)' }}
               title={`${sourceUtil.unit(
@@ -779,7 +796,7 @@ export default class Index extends PureComponent {
             <Badge status="warning" />
             <FormattedMessage id="team.diskUsage" />
           </p>
-          <div>
+          <div className={styles.hands}>
             <Tooltip
               style={{ color: 'rgba(0,0,0,.85)' }}
               title={`${sourceUtil.unit(
@@ -803,7 +820,8 @@ export default class Index extends PureComponent {
             style={{
               wordBreak: 'break-all',
               wordWrap: 'break-word',
-              color: 'rgba(0,0,0,.85)'
+              color: 'rgba(0,0,0,.85)',
+              cursor: 'default'
             }}
           >
             {index.overviewInfo.share_app_num || 0}
@@ -1068,7 +1086,10 @@ export default class Index extends PureComponent {
                                 </div>
                                 <div>
                                   <span>发布记录：</span>
-                                  <a style={{ color: 'rgba(0, 0, 0, 0.65)' }}>
+                                  <a
+                                    style={{ color: 'rgba(0, 0, 0, 0.65)' }}
+                                    className={styles.hands}
+                                  >
                                     {share_record_num}
                                   </a>
                                 </div>
