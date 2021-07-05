@@ -372,6 +372,25 @@ export async function getApplication(body = {}) {
     }
   );
 }
+/* 基于记录重新部署 */
+export async function getAppRedeploy(body = {}) {
+  return request(
+    `${apiconfig.baseUrl}/console/teams/${body.team_name}/groups/${body.group_id}/upgrade-records/${body.record_id}/deploy`,
+    {
+      method: 'post'
+    }
+  );
+}
+
+export async function getHelmApplication(body = {}, handleError) {
+  return request(
+    `${apiconfig.baseUrl}/console/proxy/enterprise-server/api/v1/enterprises/${body.enterprise_id}/appstores/${body.appStoreName}/apps/${body.app_name}`,
+    {
+      method: 'get',
+      handleError
+    }
+  );
+}
 
 /* 获取企业详情 */
 export async function getCompanyInfo(body = {}) {
@@ -425,35 +444,20 @@ export async function getTeamOverview(body = {}, handleError) {
   );
 }
 
-/* 生成升级订单 */
-
-export async function postUpdateOrder(body = {}) {
-  return request(
-    `${apiconfig.baseUrl}/console/teams/${body.team_name}/groups/${body.group_id}/upgrade-records`,
-    {
-      method: 'post',
-      data: {
-        group_key: body.group_key,
-        market_name: body.marketName,
-        is_from_cloud: body.isFromCloud
-      }
-    }
-  );
-}
-
 /* 创建升级任务 */
-
-export async function postUpdatedTasks(body = {}) {
+export async function postUpdatedTasks(body = {}, handleError) {
   return request(
-    `${apiconfig.baseUrl}/console/teams/${body.team_name}/groups/${body.group_id}/upgrade-tasks`,
+    `${apiconfig.baseUrl}/console/teams/${body.team_name}/groups/${body.group_id}/upgrade-records/${body.upgrade_record_id}/upgrade`,
     {
       method: 'post',
       data: {
         upgrade_record_id: body.upgrade_record_id,
         group_key: body.group_key,
         version: body.version,
-        services: body.services
-      }
+        services: body.services,
+        upgrade_group_id: body.upgrade_group_id
+      },
+      handleError
     }
   );
 }
@@ -466,7 +470,8 @@ export async function getUpdatedVersion(body = {}) {
     {
       method: 'get',
       params: {
-        group_key: body.group_key
+        group_key: body.group_key,
+        upgrade_group_id: body.upgrade_group_id
       }
     }
   );
@@ -480,9 +485,10 @@ export async function getUpdatedInfo(body = {}) {
     {
       method: 'get',
       params: {
-        group_key: body.group_key,
+        group_key: body.app_model_key,
         version: body.version,
-        market_name: body.marketName
+        market_name: body.marketName,
+        upgrade_group_id: body.upgradeGroupID
       }
     }
   );
@@ -506,6 +512,15 @@ export async function getUpdateRecordsList(body = {}) {
   );
 }
 
+export async function getUpgradeRecordsHelmList(body = {}) {
+  return request(
+    `${apiconfig.baseUrl}/console/teams/${body.team_name}/groups/${body.group_id}/releases`,
+    {
+      method: 'get'
+    }
+  );
+}
+
 /* 查询某应用的更新记录列表 */
 
 export async function getUpdateRecordsInfo(body = {}) {
@@ -513,7 +528,9 @@ export async function getUpdateRecordsInfo(body = {}) {
     `${apiconfig.baseUrl}/console/teams/${body.team_name}/groups/${body.group_id}/upgrade-records/${body.record_id}`,
     {
       method: 'get',
-      params: {}
+      params: {
+        record_id: body.record_id
+      }
     }
   );
 }
@@ -794,6 +811,17 @@ export async function fetchEnterpriseInfo(param) {
     `${apiconfig.baseUrl}/console/enterprise/${param.enterprise_id}/info`,
     {
       method: 'get'
+    }
+  );
+}
+export async function getCreateAppTeams(param) {
+  return request(
+    `${apiconfig.baseUrl}/console/enterprise/${param.enterprise_id}/create-app-teams`,
+    {
+      method: 'get',
+      params: {
+        name: param.name
+      }
     }
   );
 }

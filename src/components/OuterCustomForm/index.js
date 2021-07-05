@@ -7,12 +7,12 @@
 /* eslint-disable no-nested-ternary */
 import {
   Alert,
+  Badge,
   Button,
   Col,
   Form,
   Icon,
   Input,
-  Modal,
   Radio,
   Row,
   Select,
@@ -21,7 +21,6 @@ import {
 import { connect } from 'dva';
 import React, { Fragment, PureComponent } from 'react';
 import AddGroup from '../../components/AddOrEditGroup';
-import globalUtil from '../../utils/global';
 import rainbondUtil from '../../utils/rainbond';
 
 const FormItem = Form.Item;
@@ -68,32 +67,10 @@ export default class Index extends PureComponent {
   cancelAddGroup = () => {
     this.setState({ addGroup: false });
   };
-  handleAddGroup = vals => {
+  handleAddGroup = groupId => {
     const { setFieldsValue } = this.props.form;
-
-    this.props.dispatch({
-      type: 'application/addGroup',
-      payload: {
-        team_name: globalUtil.getCurrTeamName(),
-        ...vals
-      },
-      callback: group => {
-        if (group) {
-          // 获取群组
-          this.props.dispatch({
-            type: 'global/fetchGroups',
-            payload: {
-              team_name: globalUtil.getCurrTeamName(),
-              region_name: globalUtil.getCurrRegionName()
-            },
-            callback: () => {
-              setFieldsValue({ group_id: group.group_id });
-              this.cancelAddGroup();
-            }
-          });
-        }
-      }
-    });
+    setFieldsValue({ group_id: groupId });
+    this.cancelAddGroup();
   };
   handleChange = () => {
     this.setState({
@@ -241,7 +218,7 @@ export default class Index extends PureComponent {
       showCreateGroup = true
     } = this.props;
     const { getFieldDecorator, getFieldValue } = form;
-    const { endpointsType, staticList } = this.state;
+    const { endpointsType, staticList, addGroup } = this.state;
     const data = this.props.data || {};
     const platform_url = rainbondUtil.documentPlatform_url(rainbondInfo);
     const isService = handleType && handleType === 'Service';
@@ -259,7 +236,13 @@ export default class Index extends PureComponent {
           <Form.Item {...formItemLayout} label="组件名称">
             {getFieldDecorator('service_cname', {
               initialValue: data.service_cname || '',
-              rules: [{ required: true, message: '请输入组件名称' }]
+              rules: [
+                { required: true, message: '请输入组件名称' },
+                {
+                  max: 24,
+                  message: '最大长度24位'
+                }
+              ]
             })(
               <Input
                 placeholder="请输入组件名称"
@@ -310,6 +293,13 @@ export default class Index extends PureComponent {
               >
                 <Radio value="static">静态注册</Radio>
                 <Radio value="api">API注册</Radio>
+                <Radio value="kubernetes">
+                  <Badge count="Beta">
+                    <span style={{ width: 100, display: 'block' }}>
+                      Kubernetes
+                    </span>
+                  </Badge>
+                </Radio>
               </RadioGroup>
             )}
           </FormItem>
@@ -376,144 +366,39 @@ export default class Index extends PureComponent {
               )}
             </FormItem>
           )}
-          {/* discovery type is disable  */}
-          {endpointsType == 'discovery' && (
+
+          {endpointsType === 'kubernetes' && (
             <div>
-              <FormItem
-                {...formItemLayout}
-                label="动态注册类型"
-                style={{ zIndex: 99999 }}
-              >
-                {getFieldDecorator('type', {
-                  rules: [{ required: true, message: '请选择动态注册类型' }],
+              <FormItem {...formItemLayout} label="Namespace">
+                {getFieldDecorator('namespace', {
+                  rules: [{ required: false, message: '请输入Namesapce' }],
                   initialValue: ''
                 })(
-                  <Select
-                    getPopupContainer={triggerNode => triggerNode.parentNode}
-                    onChange={this.handleChange}
-                    placeholder="请选择类型"
+                  <Input
                     style={{
                       display: 'inline-block',
-                      width: 265,
+                      width: isService ? 350 : 277,
                       marginRight: 15
                     }}
-                  >
-                    {['Etcd'].map((port, index) => {
-                      return (
-                        <Option value={port} key={index}>
-                          {port}
-                        </Option>
-                      );
-                    })}
-                  </Select>
+                    placeholder="留空则默认为当前团队所在Namesapce"
+                  />
                 )}
-                <Button onClick={this.showModal}>补全信息</Button>
               </FormItem>
-              <Modal
-                title={getFieldValue('type')}
-                visible={this.state.visible}
-                onOk={this.handleCancel}
-                onCancel={this.handleCancel}
-              >
-                <FormItem
-                  {...formItemLayout}
-                  label={
-                    <span>
-                      组件地址
-                      {platform_url && (
-                        <Tooltip title="点击阅读文档">
-                          <a
-                            href={`${platform_url}docs/component-create/thirdparty-service/thirdparty-create`}
-                            target="_blank"
-                          >
-                            <Icon type="question-circle-o" />
-                          </a>
-                        </Tooltip>
-                      )}
-                    </span>
-                  }
-                  style={{ textAlign: 'right' }}
-                >
-                  {getFieldDecorator('servers', {
-                    rules: [
-                      { required: true },
-                      { validator: this.validAttrName }
-                    ],
-                    initialValue: ''
-                  })(
-                    <div>
-                      {staticList.map((item, index) => {
-                        return (
-                          <Row key={index}>
-                            <Col span={20}>
-                              <Input
-                                onChange={this.onKeyChange.bind(
-                                  this,
-                                  index,
-                                  'servers'
-                                )}
-                                value={item}
-                                placeholder="请输入组件地址"
-                              />
-                            </Col>
-                            <Col span={4} style={{ textAlign: 'center' }}>
-                              {index == 0 ? (
-                                <Icon
-                                  type="plus-circle"
-                                  onClick={() => {
-                                    this.add('servers');
-                                  }}
-                                  style={{ fontSize: '20px' }}
-                                />
-                              ) : (
-                                <Icon
-                                  type="minus-circle"
-                                  style={{ fontSize: '20px' }}
-                                  onClick={this.remove.bind(
-                                    this,
-                                    index,
-                                    'servers'
-                                  )}
-                                />
-                              )}
-                            </Col>
-                          </Row>
-                        );
-                      })}
-                    </div>
-                  )}
-                </FormItem>
-                <FormItem
-                  {...formItemLayout}
-                  label="key"
-                  style={{ textAlign: 'right' }}
-                >
-                  {getFieldDecorator('key', {
-                    rules: [{ required: true, message: '请输入key!' }],
-                    initialValue: undefined
-                  })(<Input placeholder="请输入key" />)}
-                </FormItem>
-                <FormItem
-                  {...formItemLayout}
-                  label="用户名"
-                  style={{ textAlign: 'right' }}
-                >
-                  {getFieldDecorator('username', {
-                    rules: [{ required: false, message: '请输入用户名!' }],
-                    initialValue: undefined
-                  })(<Input placeholder="请输入用户名" />)}
-                </FormItem>
-                <FormItem
-                  {...formItemLayout}
-                  label="密码"
-                  style={{ textAlign: 'right' }}
-                >
-                  {getFieldDecorator('password', {
-                    rules: [{ required: false, message: '请输入密码!' }],
-                    initialValue: undefined
-                  })(<Input placeholder="请输入密码" />)}
-                </FormItem>
-              </Modal>
+              <FormItem {...formItemLayout} label="Service">
+                {getFieldDecorator('serviceName', {
+                  rules: [{ required: true, message: '请输入服务名' }],
+                  initialValue: ''
+                })(
+                  <Input
+                    style={{
+                      display: 'inline-block',
+                      width: isService ? 350 : 277,
+                      marginRight: 15
+                    }}
+                    placeholder="请输入服务名"
+                  />
+                )}
+              </FormItem>
             </div>
           )}
 
@@ -547,7 +432,7 @@ export default class Index extends PureComponent {
             </Form.Item>
           ) : null}
         </Form>
-        {this.state.addGroup && (
+        {addGroup && (
           <AddGroup onCancel={this.cancelAddGroup} onOk={this.handleAddGroup} />
         )}
       </Fragment>

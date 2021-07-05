@@ -101,7 +101,7 @@ export default [
             authority: ['admin', 'user']
           },
           {
-            path: '/enterprise/:eid/shared',
+            path: '/enterprise/:eid/shared/:marketName',
             component: './EnterpriseShared',
             name: 'EnterpriseShared',
             authority: ['admin', 'user']
@@ -201,6 +201,13 @@ export default [
             name: 'Upgrade',
             authority: ['admin', 'user'],
             title: '云市应用升级'
+          },
+          {
+            path:
+              '/team/:teamName/region/:regionName/apps/:appID/upgrade/:upgradeGroupID/record/:recordID',
+            component: './Upgrade/UpgradeInfo',
+            name: 'UpgradeInfo',
+            authority: ['admin', 'user']
           },
           {
             path: '/team/:teamName/region/:regionName/apps/:appID/configgroups',

@@ -167,12 +167,12 @@ const updateKubernetesSteps = {
   },
   InitClusterConfig: {
     Title: '初始化集群配置',
-    Description: '初始化扩容集群所需要的配置数据',
+    Description: '初始化配置集群所需要的配置数据',
     Status: ''
   },
   UpdateKubernetes: {
-    Title: '扩容集群',
-    Description: '连接所有节点完成节点的扩容，耗时取决于网络状况。',
+    Title: '配置集群',
+    Description: '连接所有节点完成节点的配置，耗时取决于网络状况。',
     Status: ''
   }
 };
@@ -543,7 +543,7 @@ const cloud = {
         notification.warning({ message: '集群不支持重新安装' });
         break;
       case 7017:
-        notification.warning({ message: '该集群不支持节点扩容动作' });
+        notification.warning({ message: '该集群不支持节点配置动作' });
         break;
       case 7018:
         notification.warning({
@@ -552,6 +552,9 @@ const cloud = {
         break;
       case 7019:
         notification.warning({ message: '无法获取集群的初始化状态' });
+        break;
+      case 8002:
+        notification.warning({ message: '应用商店地址不是合法的Helm仓库地址或通信不畅，请确认' });
         break;
       case 400:
         notification.warning({ message: '请求参数错误' });

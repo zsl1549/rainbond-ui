@@ -52,6 +52,7 @@ import {
   editScalingRules,
   editStartProbe,
   editUpDatekey,
+  fetchHelmInstanceDetails,
   fetchInstanceDetails,
   fetchLogContent,
   fetchOperationLog,
@@ -136,7 +137,8 @@ import {
   updateComponentDeployType,
   updatePluginMemory,
   updateRolling,
-  updateServiceName
+  updateServiceName,
+  upgrade
 } from '../services/app';
 import { getGroupApps } from '../services/application';
 import { addCertificate, getCertificates } from '../services/team';
@@ -263,6 +265,12 @@ export default {
     },
     *putDeploy({ payload, callback, handleError }, { call }) {
       const response = yield call(deploy, payload, handleError);
+      if (response && callback) {
+        callback(response);
+      }
+    },
+    *putUpgrade({ payload, callback, handleError }, { call }) {
+      const response = yield call(upgrade, payload, handleError);
       if (response && callback) {
         callback(response);
       }
@@ -429,9 +437,14 @@ export default {
         callback(response);
       }
     },
-
     *fetchInstanceDetails({ payload, callback }, { call, put }) {
       const response = yield call(fetchInstanceDetails, payload);
+      if (response && callback) {
+        callback(response);
+      }
+    },
+    *fetchHelmInstanceDetails({ payload, callback }, { call, put }) {
+      const response = yield call(fetchHelmInstanceDetails, payload);
       if (response && callback) {
         callback(response);
       }
@@ -1060,8 +1073,8 @@ export default {
         callback(response);
       }
     },
-    *deleteApp({ payload, callback }, { call }) {
-      const response = yield call(deleteApp, payload);
+    *deleteApp({ payload, callback, handleError }, { call }) {
+      const response = yield call(deleteApp, payload, handleError);
       if (response && callback) {
         callback(response);
       }

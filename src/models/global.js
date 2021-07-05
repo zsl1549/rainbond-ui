@@ -30,14 +30,17 @@ import {
   getAllRegion,
   getAllRegionFee,
   getApplication,
+  getAppRedeploy,
   getCloudPlugin,
   getCompanyInfo,
   getConfigurationDetails,
   getConfigurationList,
+  getCreateAppTeams,
   getDomainName,
   getDomainTime,
   getEnterpriseRoles,
   getGuideState,
+  getHelmApplication,
   getJoinTeam,
   getMarketApp,
   getMarketPlugins,
@@ -55,6 +58,7 @@ import {
   getUpdateRecordsInfo,
   getUpdateRecordsList,
   getUpdateRollback,
+  getUpgradeRecordsHelmList,
   getUserCanJoinTeams,
   getuserMessage,
   getVersion,
@@ -62,7 +66,6 @@ import {
   isPubCloud,
   joinTeam,
   postUpdatedTasks,
-  postUpdateOrder,
   putMsgAction,
   queryCodeWarehouseInfo,
   queryCodeWarehouseType,
@@ -445,8 +448,8 @@ export default {
       const count = yield select(state => state.global.notices.length);
       yield put({ type: 'user/changeNotifyCount', payload: count });
     },
-    *fetchGroups({ payload, callback }, { put, call }) {
-      const response = yield call(getTeamRegionGroups, payload);
+    *fetchGroups({ payload, callback, handleError }, { put, call }) {
+      const response = yield call(getTeamRegionGroups, payload, handleError);
       if (response) {
         yield put({
           type: 'saveGroups',
@@ -467,8 +470,8 @@ export default {
         });
       }
     },
-    *CloudAppUpdateOrder({ payload, callback }, { call }) {
-      const response = yield call(postUpdateOrder, payload);
+    *fetchHelmApplication({ payload, callback, handleError }, { call }) {
+      const response = yield call(getHelmApplication, payload, handleError);
       if (response && callback) {
         setTimeout(() => {
           callback(response);
@@ -491,8 +494,16 @@ export default {
         });
       }
     },
-    *CloudAppUpdatedTasks({ payload, callback }, { call }) {
-      const response = yield call(postUpdatedTasks, payload);
+    *CloudAppUpdatedTasks({ payload, callback, handleError }, { call }) {
+      const response = yield call(postUpdatedTasks, payload, handleError);
+      if (response && callback) {
+        setTimeout(() => {
+          callback(response);
+        });
+      }
+    },
+    *fetchAppRedeploy({ payload, callback, handleError }, { call }) {
+      const response = yield call(getAppRedeploy, payload, handleError);
       if (response && callback) {
         setTimeout(() => {
           callback(response);
@@ -501,6 +512,14 @@ export default {
     },
     *CloudAppUpdateRecordsList({ payload, callback }, { call }) {
       const response = yield call(getUpdateRecordsList, payload);
+      if (response && callback) {
+        setTimeout(() => {
+          callback(response);
+        });
+      }
+    },
+    *fetchUpgradeRecordsHelmList({ payload, callback }, { call }) {
+      const response = yield call(getUpgradeRecordsHelmList, payload);
       if (response && callback) {
         setTimeout(() => {
           callback(response);
@@ -598,6 +617,12 @@ export default {
     },
     *fetchEnterpriseRoles({ payload, callback }, { call }) {
       const response = yield call(getEnterpriseRoles, payload);
+      if (response && callback) {
+        callback(response);
+      }
+    },
+    *fetchCreateAppTeams({ payload, callback }, { call }) {
+      const response = yield call(getCreateAppTeams, payload);
       if (response && callback) {
         callback(response);
       }
